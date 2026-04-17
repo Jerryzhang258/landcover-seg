@@ -96,6 +96,9 @@ def train(cfg: dict, cfg_path: str) -> None:
         num_workers=cfg.get("workers", 4), pin_memory=True,
     )
 
+    if device == "cuda":
+        torch.cuda.reset_peak_memory_stats()
+
     wb = _maybe_init_wandb(cfg)
     print(f"[info] model={cfg['model']} params={n_params:.2f}M  "
           f"loss={cfg['loss']}  train={len(train_ds)} val={len(val_ds)}")
@@ -167,6 +170,9 @@ def train(cfg: dict, cfg_path: str) -> None:
                 break
 
     train_time_hr = (time.time() - t0) / 3600.0
+    gpu_peak_mb = (
+        torch.cuda.max_memory_allocated() / (1024 ** 2) if device == "cuda" else 0.0
+    )
     summary = {
         "run_name": cfg["run_name"],
         "model": cfg["model"],
@@ -174,6 +180,7 @@ def train(cfg: dict, cfg_path: str) -> None:
         "params_M": n_params,
         "best_val_mIoU": best_miou,
         "train_time_hr": train_time_hr,
+        "gpu_peak_MB": gpu_peak_mb,
         "ckpt": ckpt_path,
     }
     ensure_dir(cfg.get("output_dir", "outputs"))

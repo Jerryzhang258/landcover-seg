@@ -13,12 +13,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import time
 from typing import List
 
 import cv2
 import numpy as np
 import torch
-import yaml
 from tqdm import tqdm
 
 from .dataset import FullImageDataset
@@ -111,11 +111,19 @@ def main() -> None:
 
     cm = ConfusionMatrix(NUM_CLASSES, IGNORE_INDEX)
     per_image = []
+    total_infer_s = 0.0
 
     for i in tqdm(range(len(ds)), desc=f"eval {args.split}"):
         iid, img, mask_rgb = ds[i]
         gt = rgb_to_label(mask_rgb)
+
+        if device == "cuda":
+            torch.cuda.synchronize()
+        t0 = time.time()
         pred = predict_full(model, img, tile=args.tile, overlap=args.overlap, device=device)
+        if device == "cuda":
+            torch.cuda.synchronize()
+        total_infer_s += time.time() - t0
 
         img_cm = ConfusionMatrix(NUM_CLASSES, IGNORE_INDEX)
         img_cm.update(pred, gt)
@@ -131,11 +139,14 @@ def main() -> None:
             )
 
     report = cm.report()
+    infer_ms_per_image = (total_infer_s / max(len(ds), 1)) * 1000.0
     out_report = {
         "ckpt": args.ckpt,
         "model": model_name,
         "split": args.split,
         "num_images": len(ds),
+        "inference_ms_per_image": infer_ms_per_image,
+        "confusion_matrix": cm.mat.tolist(),
         **report,
     }
     with open(os.path.join(args.out, "report.json"), "w") as f:
@@ -144,7 +155,7 @@ def main() -> None:
         json.dump(per_image, f, indent=2)
 
     print(f"[done] {args.split}  mIoU={report['mIoU']:.4f}  mDice={report['mDice']:.4f}  "
-          f"pix_acc={report['pixel_acc']:.4f}")
+          f"pix_acc={report['pixel_acc']:.4f}  infer={infer_ms_per_image:.0f}ms/img")
     for c in CLASS_NAMES:
         print(f"  IoU[{c:<11}] = {report['per_class_IoU'][c]:.4f}")
 

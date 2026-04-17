@@ -1,0 +1,10 @@
+# Tiling ablation: 4x4 grid (612x612), 20 epochs, U-Net + ResNet34.
+# Requires tiles at data/tiles_4x4 (generate with
+#   python scripts/prepare_tiles.py --grid 4 --tile-size 612 --out-root data/tiles_4x4 )
+run_name: ablation_4x4_r34
+model: unet_resnet34
+loss: ce
+data_root: data/tiles_4x4
+tile_size: 612
+epochs: 20
+patience: 20

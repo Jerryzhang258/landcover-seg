@@ -299,9 +299,33 @@ python scripts/visualize_predictions.py \
     --pred-dirs outputs/unet_r34_ce outputs/deeplab_r50_ce outputs/attn_unet_ce \
     --ids 12345 67890 11223 \
     --out outputs/figs/qualitative.png
+
+# 每个模型的混淆矩阵热力图（对角线 = per-class recall）
+python scripts/plot_confusion_matrix.py \
+    --runs unet_r34_ce deeplab_r50_ce attn_unet_ce \
+    --out-dir outputs/figs
+
+# 效率散点图（mIoU vs params / train_time / infer_latency）
+python scripts/plot_efficiency.py \
+    --out-prefix outputs/figs/efficiency
+
+# 失败案例：按测试图 mIoU 升序取最差 N 张可视化
+python scripts/plot_failures.py \
+    --run deeplab_r50_ce --n 5 \
+    --out outputs/figs/failures_deeplab_r50.png
 ```
 
 所有图都在 `outputs/figs/`，报告直接贴。
+
+### 可选：3×3 vs 4×4 tiling ablation（提案 Phase 1）
+
+验证较小 tile（612²）是否因丢失空间 context 而降低 mIoU。U-Net+ResNet34 × 20 epoch × 两种 tile。
+
+```bash
+bash scripts/tiling_ablation.sh
+```
+
+跑完会打印两行摘要：`ablation_3x3_r34 mIoU=x.xxx` / `ablation_4x4_r34 mIoU=x.xxx`。
 
 ---
 

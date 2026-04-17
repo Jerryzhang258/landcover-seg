@@ -25,6 +25,7 @@ def main() -> None:
             "params_M": s.get("params_M"),
             "best_val_mIoU": s.get("best_val_mIoU"),
             "train_time_hr": s.get("train_time_hr"),
+            "gpu_peak_MB": s.get("gpu_peak_MB"),
         }
         # Try to pair with a test report.
         run_dir = os.path.join(args.outputs, s.get("run_name", ""))
@@ -35,6 +36,7 @@ def main() -> None:
             row["test_mIoU"] = r.get("mIoU")
             row["test_mDice"] = r.get("mDice")
             row["test_pix_acc"] = r.get("pixel_acc")
+            row["infer_ms_per_image"] = r.get("inference_ms_per_image")
             for c, v in r.get("per_class_IoU", {}).items():
                 row[f"IoU_{c}"] = v
         rows.append(row)

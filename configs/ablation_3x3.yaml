@@ -1,0 +1,8 @@
+# Tiling ablation: 3x3 grid (816x816), 20 epochs, U-Net + ResNet34.
+# Pair with configs/ablation_4x4.yaml to quantify context loss from smaller tiles.
+run_name: ablation_3x3_r34
+model: unet_resnet34
+loss: ce
+data_root: data/tiles
+epochs: 20
+patience: 20   # don't early-stop; both ablation runs must see all 20 epochs
