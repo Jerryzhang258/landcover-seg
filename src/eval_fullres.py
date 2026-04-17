@@ -29,6 +29,10 @@ from .utils import (CLASS_NAMES, IGNORE_INDEX, IMAGENET_MEAN, IMAGENET_STD,
                     NUM_CLASSES, ensure_dir, label_to_rgb, rgb_to_label)
 
 
+def _pad_to_multiple_of_32(x: int) -> int:
+    return ((x + 31) // 32) * 32
+
+
 @torch.no_grad()
 def predict_full(
     model: torch.nn.Module,
@@ -38,31 +42,41 @@ def predict_full(
     device: str = "cuda",
     batch_size: int = 2,
 ) -> np.ndarray:
-    """Returns HxW uint8 label map stitched from softmax averages."""
+    """Returns HxW uint8 label map stitched from softmax averages.
+
+    Each tile is reflect-padded to the next multiple of 32 before the model
+    forward (smp encoders require it), then logits are center-cropped back
+    to the original tile size before stitching.
+    """
     H, W = img.shape[:2]
     positions = sliding_window_positions(H, W, tile, overlap)
     mean = torch.tensor(IMAGENET_MEAN, device=device).view(1, 3, 1, 1)
     std = torch.tensor(IMAGENET_STD, device=device).view(1, 3, 1, 1)
+    pad_to = _pad_to_multiple_of_32(tile)
+    pad = (pad_to - tile) // 2  # equal pad on each side
+
+    def _forward(buf_x: List[torch.Tensor]) -> np.ndarray:
+        xb = torch.cat(buf_x, 0).to(device)
+        if pad > 0:
+            xb = torch.nn.functional.pad(xb, (pad, pad, pad, pad), mode="reflect")
+        xb = (xb - mean) / std
+        probs = torch.softmax(model(xb), dim=1)
+        if pad > 0:
+            probs = probs[:, :, pad : pad + tile, pad : pad + tile]
+        return probs.cpu().numpy()
 
     logits_tiles: List[np.ndarray] = []
-    buf_x, buf_pos = [], []
+    buf_x: List[torch.Tensor] = []
     for (y, x) in positions:
         crop = img[y : y + tile, x : x + tile]
         t = torch.from_numpy(crop).permute(2, 0, 1).float().unsqueeze(0) / 255.0
         buf_x.append(t)
-        buf_pos.append((y, x))
         if len(buf_x) == batch_size:
-            xb = torch.cat(buf_x, 0).to(device)
-            xb = (xb - mean) / std
-            probs = torch.softmax(model(xb), dim=1).cpu().numpy()
-            for p in probs:
+            for p in _forward(buf_x):
                 logits_tiles.append(p)
-            buf_x, buf_pos = [], []
+            buf_x = []
     if buf_x:
-        xb = torch.cat(buf_x, 0).to(device)
-        xb = (xb - mean) / std
-        probs = torch.softmax(model(xb), dim=1).cpu().numpy()
-        for p in probs:
+        for p in _forward(buf_x):
             logits_tiles.append(p)
 
     return stitch_with_overlap(logits_tiles, positions, (H, W), NUM_CLASSES)
