@@ -1,0 +1,3 @@
+run_name: unet_scratch_ce
+model: unet_scratch
+loss: ce

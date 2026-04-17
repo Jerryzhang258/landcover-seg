@@ -1,0 +1,3 @@
+run_name: attn_unet_ce
+model: attn_unet
+loss: ce

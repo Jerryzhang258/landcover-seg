@@ -1,0 +1,4 @@
+run_name: deeplab_r101_ce
+model: deeplab_r101
+loss: ce
+bs: 4  # ResNet101 is heavier; drop bs to fit on a single 16GB GPU

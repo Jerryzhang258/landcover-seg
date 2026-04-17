@@ -1,0 +1,3 @@
+run_name: deeplab_r50_dice
+model: deeplab_r50
+loss: dice

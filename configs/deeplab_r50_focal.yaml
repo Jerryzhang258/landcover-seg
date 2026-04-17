@@ -1,0 +1,3 @@
+run_name: deeplab_r50_focal
+model: deeplab_r50
+loss: focal

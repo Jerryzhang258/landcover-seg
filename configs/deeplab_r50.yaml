@@ -1,0 +1,3 @@
+run_name: deeplab_r50_ce
+model: deeplab_r50
+loss: ce

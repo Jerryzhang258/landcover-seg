@@ -1,0 +1,3 @@
+run_name: vanilla_unet_ce
+model: vanilla_unet
+loss: ce

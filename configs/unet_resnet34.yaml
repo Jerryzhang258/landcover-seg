@@ -1,0 +1,3 @@
+run_name: unet_r34_ce
+model: unet_resnet34
+loss: ce

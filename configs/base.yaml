@@ -1,0 +1,17 @@
+# Shared defaults. Per-experiment YAMLs override keys from this file.
+seed: 42
+data_root: data/tiles
+ckpt_dir: checkpoints
+output_dir: outputs
+tile_size: 816
+
+bs: 8
+workers: 4
+epochs: 50
+patience: 10
+lr: 1.0e-4
+weight_decay: 1.0e-4
+
+use_wandb: true
+wandb_project: landcover-seg
+wandb_mode: online  # set to "offline" or "disabled" if no internet
