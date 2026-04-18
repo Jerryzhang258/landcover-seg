@@ -36,31 +36,23 @@
 \maketitle
 
 \begin{abstract}
-We study semantic segmentation of 2448$\times$2448 satellite imagery on the
-DeepGlobe Land Cover Classification benchmark (7 classes, 803 images) through
-nine controlled experiments that isolate three factors: network architecture,
-ImageNet pre-training, and loss function. To handle the native resolution we
-adopt a 3$\times$3 tiling pipeline (816$\times$816 tiles) with an
-overlap-averaged sliding-window reconstruction at test time. Across U-Net,
-DeepLabV3+, and Attention U-Net with ResNet34/50/101 backbones trained under
-Cross-Entropy, Dice, Focal, and combined losses, we find that (i) \emph{holding
-architecture fixed (U-Net + ResNet34)}, ImageNet pre-training alone adds
-$+4.1$ mIoU, while decoder choice among pretrained models contributes at
-most $+1.0$; the combined effect of upgrading from scratch Vanilla U-Net to
-pretrained Attention U-Net is $+8.2$ mIoU; (ii) \emph{holding the architecture
-at DeepLabV3+-R50}, switching loss from CE to Combined CE~+~Dice raises
-Barren-class test IoU by $+2.0$ points (0.656~$\to$~0.676) and mean test
-IoU by $+3.7$ points (0.696~$\to$~0.733); compared to the weakest baseline
-(Vanilla U-Net + CE), the best pipeline yields $+10.5$ points on Barren,
-reflecting the combined effect of architecture, pretraining, and loss; and
-(iii) a deeper ResNet101 encoder is \emph{not} Pareto-dominant---it achieves
-slightly higher test mIoU (+0.022) than ResNet50 but is $71\%$ larger, trains
-$2.4\times$ longer, and is $\sim 6\%$ slower at inference; on the validation
-set it actually underperforms R50 by $-0.008$, a sign of high sensitivity
-to its smaller batch size. The best configuration
-(DeepLabV3+-R50~+~Combined) reaches 0.7332 test mIoU on full-resolution
-reconstructions, exceeding the Vanilla U-Net baseline by $+9.3$ points.
-Code and trained weights:
+We study semantic segmentation on the DeepGlobe Land Cover benchmark
+(7 classes, 803 images at 2448$\times$2448) through nine controlled
+experiments that isolate the effects of network architecture, ImageNet
+pre-training, and loss function. A 3$\times$3 tiling pipeline with
+overlap-averaged sliding-window reconstruction handles the native
+resolution. Varying one factor at a time, we find that
+(i) on a fixed architecture, ImageNet pre-training contributes $+4.1$
+mIoU---larger than any single decoder swap ($\le +1.0$);
+(ii) on DeepLabV3+-R50, replacing Cross-Entropy with a Combined
+CE$+$Dice loss raises test mIoU by $+3.7$ pp and Barren-class IoU by
+$+2.0$ pp; and
+(iii) ResNet101 is not Pareto-dominant over ResNet50---its $+0.022$
+test-mIoU gain is offset by a $-0.008$ validation deficit (within
+single-seed variance), $71\%$ more parameters, and $2.4\times$ training
+cost. The best configuration (DeepLabV3+-R50 with Combined loss) attains
+$0.7332$ test mIoU on full-resolution reconstructions, exceeding the
+Vanilla U-Net baseline by $+9.3$ pp. Code and trained weights:
 \url{https://github.com/Jerryzhang258/landcover-seg}.
 \end{abstract}
 
