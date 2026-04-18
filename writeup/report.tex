@@ -43,15 +43,23 @@ ImageNet pre-training, and loss function. To handle the native resolution we
 adopt a 3$\times$3 tiling pipeline (816$\times$816 tiles) with an
 overlap-averaged sliding-window reconstruction at test time. Across U-Net,
 DeepLabV3+, and Attention U-Net with ResNet34/50/101 backbones trained under
-Cross-Entropy, Dice, Focal, and combined losses, we find that (i) ImageNet
-pre-training contributes a $+7.1$ mIoU gain that dwarfs the $\le 1.5$ gain
-from switching between decoders; (ii) a combined CE~+~Dice loss increases the
-Barren-class IoU from 0.571 to 0.676 (a $+10.5$ absolute-point improvement)
-while also raising mean IoU by $+1.8$; and (iii) a deeper ResNet101 encoder
-underperforms ResNet50 by $-0.08$ mIoU despite using $71\%$ more parameters and
-being $\sim11\%$ slower at inference. The best configuration
-(DeepLabV3+-R50~+~Combined) reaches 0.733 test mIoU on full-resolution
-reconstructions, exceeding published DeepGlobe baselines.
+Cross-Entropy, Dice, Focal, and combined losses, we find that (i) \emph{holding
+architecture fixed (U-Net + ResNet34)}, ImageNet pre-training alone adds
+$+4.1$ mIoU, while decoder choice among pretrained models contributes at
+most $+1.0$; the combined effect of upgrading from scratch Vanilla U-Net to
+pretrained Attention U-Net is $+8.2$ mIoU; (ii) \emph{holding the architecture
+at DeepLabV3+-R50}, switching loss from CE to Combined CE~+~Dice raises
+Barren-class test IoU by $+2.0$ points (0.656~$\to$~0.676) and mean test
+IoU by $+3.7$ points (0.696~$\to$~0.733); compared to the weakest baseline
+(Vanilla U-Net + CE), the best pipeline yields $+10.5$ points on Barren,
+reflecting the combined effect of architecture, pretraining, and loss; and
+(iii) a deeper ResNet101 encoder is \emph{not} Pareto-dominant---it achieves
+slightly higher test mIoU (+0.022) than ResNet50 but is $71\%$ larger, trains
+$2.4\times$ longer, and is $\sim 6\%$ slower at inference; on the validation
+set it actually underperforms R50 by $-0.008$, a sign of high sensitivity
+to its smaller batch size. The best configuration
+(DeepLabV3+-R50~+~Combined) reaches 0.7332 test mIoU on full-resolution
+reconstructions, exceeding the Vanilla U-Net baseline by $+9.3$ points.
 Code and trained weights:
 \url{https://github.com/Jerryzhang258/landcover-seg}.
 \end{abstract}
@@ -367,9 +375,11 @@ per-class IoU heatmap for all six architectures.
   \includegraphics[width=\linewidth]{figs/archs_perclass.png}
   \caption{Per-class IoU heatmap.}
 \end{subfigure}
-\caption{Phase 4: Architectures across aggregate and per-class metrics.
-Rangeland IoU stays in the 0.3--0.4 range for every architecture; it is the
-class most commonly confused with Forest.}
+\caption{Phase 4: architectures across aggregate and per-class metrics.
+Rangeland IoU stays in the 0.29--0.45 range for every architecture and is
+the hardest class across the board; inspection of the confusion matrices
+(Fig.~\ref{fig:cm}) shows it is most commonly confused with Agriculture
+rather than Forest.}
 \label{fig:arch-bars}
 \end{figure}
 
@@ -379,18 +389,21 @@ Phase 5 fixes the architecture at DeepLabV3+-R50 and sweeps four losses.
 Table~\ref{tab:loss} and Figure~\ref{fig:loss-curves} report the results.
 
 \begin{table}[H]
-\centering\small
+\centering\footnotesize
 \caption{\textbf{Phase 5: loss comparison on DeepLabV3+-R50.} All runs
 share hyperparameters and training duration. The Combined loss is
-$0.5\cdot\text{CE}+0.5\cdot\text{Dice}$.}\label{tab:loss}
+$0.5\cdot\text{CE}+0.5\cdot\text{Dice}$. Per-class columns are measured on
+the full-resolution test set.}\label{tab:loss}
+\setlength{\tabcolsep}{4pt}
 \begin{tabular}{l c c c c c}
 \toprule
-Loss        & Val mIoU & Test mIoU & Barren IoU (test) & Water IoU (test) & Rangeland IoU (test) \\
+Loss  & Val & Test & Barren & Water & Rangeland \\
+      & mIoU & mIoU & IoU & IoU & IoU \\
 \midrule
 Cross-Entropy (baseline) & 0.7201 & 0.6963 & 0.656 & 0.719 & 0.415 \\
 Dice                     & 0.7314 & 0.7214 & 0.666 & 0.810 & 0.443 \\
 Focal ($\alpha{=}0.25,\gamma{=}2$) & 0.7286 & 0.7217 & 0.667 & 0.789 & 0.451 \\
-\textbf{Combined (0.5~CE + 0.5~Dice)} & \textbf{0.7382} & \textbf{0.7332} & \textbf{0.676} & \textbf{0.810} & \textbf{0.454} \\
+\textbf{Combined (0.5 CE + 0.5 Dice)} & \textbf{0.7382} & \textbf{0.7332} & \textbf{0.676} & \textbf{0.810} & \textbf{0.454} \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -421,9 +434,12 @@ smaller margin but fall short of the combination.
 
 Figure~\ref{fig:cm} shows normalized confusion matrices for Attention
 U-Net~+~CE (Phase 4 winner) and DeepLabV3+-R50~+~Combined (Phase 5
-winner). Both models share the failure mode of confusing Rangeland with
-Forest and Agriculture---these classes are spectrally and texturally
-similar in satellite imagery.
+winner). Both models share a dominant failure mode: Rangeland pixels are
+most often misclassified as \emph{Agriculture} (row fraction
+$\sim 0.21$--$0.23$), with a smaller fraction confused with Forest
+($\sim 0.02$--$0.03$). This is consistent with the visual similarity
+between low-density rangeland and managed farmland in RGB satellite
+imagery.
 
 \begin{figure}[H]
 \centering
@@ -446,7 +462,8 @@ strongest pipelines on three representative test scenes.
 Figure~\ref{fig:failures} shows the five worst-performing test images of
 the overall best model (DeepLabV3+-R50~+~Combined). In the failure
 panels, the common error modes are (i) large Rangeland patches
-predicted as Forest, (ii) urban shadows classified as Water, and (iii)
+predicted as Agriculture (the dominant confusion pair in
+Fig.~\ref{fig:cm}), (ii) urban shadows classified as Water, and (iii)
 bare-earth regions at agricultural boundaries classified as Barren.
 Errors are concentrated at semantic transitions rather than in
 homogeneous regions, which matches the intuition that the 816-pixel
@@ -487,18 +504,27 @@ Segmentation, isolating the effects of architecture, pre-training, and
 loss function. Our three central findings are:
 
 \begin{enumerate}
-\item \textbf{Pre-training is the single largest lever} (+7.1 mIoU vs.~any
-      architectural change, which contributes $\le 1.5$). Practitioners
-      facing resource constraints should first ensure a pre-trained
-      backbone before evaluating architectural variants.
+\item \textbf{Pre-training is the single largest single-variable lever.}
+      Holding the architecture fixed at U-Net + ResNet34, switching from
+      random initialization to ImageNet weights adds $+4.1$ mIoU. Among
+      pretrained models, swapping the decoder (U-Net $\to$ DeepLabV3+ $\to$
+      Attention U-Net) adds at most $+1.0$. The combined upgrade from
+      Vanilla U-Net (scratch) to Attention U-Net (ImageNet) yields
+      $+8.2$ mIoU on validation.
 \item \textbf{Combined CE~+~Dice loss is the most effective defense
-      against class imbalance} in our setting, improving minority
-      (Barren) IoU by 10.5 points over the weakest baseline and 2.0
-      points over CE with identical architecture.
-\item \textbf{Deeper encoders do not automatically help}: DeepLabV3+-R101
-      underperforms R50 by $-0.08$ mIoU while being 53 ms/image slower and
-      requiring bs=4 instead of bs=8. At the training-set scale of
-      DeepGlobe, R101's extra capacity appears to overfit.
+      against class imbalance} in our setting. Holding the architecture
+      at DeepLabV3+-R50, the loss-only swap (CE $\to$ Combined) raises
+      Barren test IoU by $+2.0$ points and mean test IoU by $+3.7$.
+      Stacking the loss improvement on top of the architecture upgrade
+      yields the full $+10.5$ Barren IoU over the Vanilla U-Net + CE
+      baseline.
+\item \textbf{Deeper encoders do not automatically win.}
+      DeepLabV3+-R101 uses $71\%$ more parameters than R50 yet
+      \emph{underperforms R50 on the validation set by $-0.008$ mIoU};
+      on the test set it marginally exceeds R50 by $+0.022$, but with
+      $2.4\times$ the training time and $\sim 6\%$ higher inference
+      latency. At DeepGlobe's data scale, R101's extra capacity is not
+      Pareto-optimal against R50.
 \end{enumerate}
 
 \textbf{Best configuration.} DeepLabV3+-R50 with Combined loss achieves
