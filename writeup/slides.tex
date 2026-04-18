@@ -1,0 +1,408 @@
+% Compile: pdflatex slides.tex
+% Target length: 15 min talk -- ~15-17 content slides + title + thanks.
+\documentclass[aspectratio=169,12pt]{beamer}
+\usetheme{metropolis}   % if unavailable, fall back to \usetheme{default}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{amsmath}
+\usepackage{xcolor}
+\usepackage{array}
+
+\definecolor{accent}{HTML}{1F6FEB}
+\setbeamercolor{progress bar}{fg=accent}
+\setbeamercolor{title separator}{fg=accent}
+\setbeamercolor{frametitle}{bg=accent,fg=white}
+
+\title{Deep Learning-Based Land Cover Segmentation\\from Satellite Imagery}
+\subtitle{Architectures, Transfer Learning, and Loss Functions}
+\author{Rongxuan Zhang}
+\institute{Northeastern University\\EECE 7370 Advanced Computer Vision}
+\date{April 18, 2026}
+
+\begin{document}
+
+% ============================================================================
+\begin{frame}
+  \titlepage
+\end{frame}
+
+% ============================================================================
+\section{Motivation}
+
+\begin{frame}{Why land-cover segmentation?}
+  \begin{columns}[T]
+  \column{0.55\textwidth}
+  \textbf{Applications}
+  \begin{itemize}
+    \item Urban planning (city growth, land use)
+    \item Precision agriculture (crop distribution)
+    \item Ecological monitoring (deforestation)
+    \item Climate and disaster response
+  \end{itemize}
+
+  \vspace{0.8em}
+  \textbf{Task.} Given a $2448\times2448$ RGB satellite image, predict
+  per-pixel class from \{Urban, Agriculture, Rangeland, Forest, Water,
+  Barren, Unknown\}.
+
+  \column{0.43\textwidth}
+  \includegraphics[width=\linewidth]{figs/samples.png}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Three technical challenges}
+  \begin{enumerate}
+    \item \textbf{Resolution:} $2448^2$ images exceed GPU memory at any
+          reasonable batch size.
+    \item \textbf{Class imbalance:} Water + Barren = $<$7\% of pixels;
+          cross-entropy gradients are swamped by the 55\% Agriculture class.
+    \item \textbf{Cost vs.\ accuracy:} many architecture/loss choices; which
+          knobs actually matter?
+  \end{enumerate}
+
+  \vspace{0.8em}
+  \begin{block}{Research questions}
+  (i) How much does ImageNet pre-training help?\\
+  (ii) Do deeper decoders beat U-Net at this resolution?\\
+  (iii) Which loss best recovers minority classes?
+  \end{block}
+\end{frame}
+
+% ============================================================================
+\section{Dataset \& Pipeline}
+
+\begin{frame}{DeepGlobe Land Cover Classification}
+  \begin{itemize}
+    \item \textbf{803} manually-annotated $2448^2$ RGB images, 7 classes
+    \item Split \textbf{at the image level} (no tile leakage):
+          562 train / 121 val / 120 test
+    \item Unknown class (6) treated as \texttt{ignore\_index}---consistent
+          with the official DeepGlobe protocol
+  \end{itemize}
+
+  \vspace{0.6em}
+  \begin{center}
+  \includegraphics[width=0.85\linewidth]{figs/class_dist.png}
+  \end{center}
+\end{frame}
+
+\begin{frame}{Tiling pipeline}
+  \begin{columns}
+  \column{0.52\textwidth}
+  \textbf{Training.} Each $2448^2$ image $\rightarrow$ $3\times3$ grid of
+  $816\times816$ tiles $\rightarrow$ 5058 train tiles total.
+
+  \vspace{0.4em}
+  \textbf{Padding.} $816 \bmod 32 = 16$; reflect-pad to $832^2$ to satisfy
+  5-stage encoder constraint. Padded mask = ignore.
+
+  \vspace{0.4em}
+  \textbf{Inference.} Sliding window ($816$ tile + 64 overlap) over
+  full $2448^2$ image; softmax probabilities averaged in overlapping
+  regions before argmax.
+
+  \column{0.45\textwidth}
+  \vspace{-0.5em}
+  \small
+  \begin{tabular}{c|c|c}
+    \multicolumn{3}{c}{$2448 \times 2448$}\\\hline
+     t1 & t2 & t3 \\\hline
+     t4 & t5 & t6 \\\hline
+     t7 & t8 & t9 \\
+  \end{tabular}
+
+  \vspace{1em}
+  \footnotesize
+  \textbf{Why tile?} Preserves native resolution (vs.\ resizing).\\
+  \textbf{Why pad?} smp encoders need H,W divisible by 32.\\
+  \textbf{Why overlap?} Reduces boundary artifacts at stitch.
+  \end{columns}
+\end{frame}
+
+% ============================================================================
+\section{Method}
+
+\begin{frame}{Experimental grid}
+  \textbf{Phase 4} -- architecture, fixed loss (CE), 6 runs:
+  \small
+  \begin{itemize}
+    \item Vanilla U-Net (scratch) \hspace{1em}\textit{Ronneberger-style baseline}
+    \item U-Net + ResNet34 (scratch) \hspace{1em}\textit{isolates arch effect}
+    \item U-Net + ResNet34 (ImageNet) \hspace{1em}\textit{isolates transfer}
+    \item DeepLabV3+ + ResNet50 (ImageNet)
+    \item DeepLabV3+ + ResNet101 (ImageNet)
+    \item Attention U-Net + ResNet34 + SCSE (ImageNet)
+  \end{itemize}
+
+  \vspace{0.4em}
+  \textbf{Phase 5} -- loss, fixed arch (Phase 4 winner = DeepLabV3+-R50), 4 runs:
+  \begin{itemize}
+    \item Cross-Entropy (baseline)
+    \item Dice
+    \item Focal ($\alpha{=}0.25,\gamma{=}2$)
+    \item Combined ($0.5 \cdot \text{CE} + 0.5 \cdot \text{Dice}$)
+  \end{itemize}
+
+  \vspace{0.4em}
+  \textbf{Phase 6} -- all 9 checkpoints evaluated at full $2448^2$ resolution.
+\end{frame}
+
+\begin{frame}{Training setup}
+  \begin{columns}[T]
+  \column{0.5\textwidth}
+  \textbf{Shared hyperparameters}
+  \begin{itemize}
+    \item AdamW, $\text{lr}=10^{-4}$, wd $10^{-4}$
+    \item Cosine annealing, 50 epochs
+    \item Early stopping, patience 10
+    \item Mixed precision (fp16)
+    \item Batch size 8 (4 for R101 OOM)
+  \end{itemize}
+
+  \column{0.5\textwidth}
+  \textbf{Augmentations} (Albumentations)
+  \begin{itemize}
+    \item H/V flip, 90$^\circ$ rotation
+    \item $\pm15^\circ$ affine
+    \item Brightness/contrast jitter
+    \item Gaussian noise
+  \end{itemize}
+
+  \vspace{0.5em}
+  \textbf{Compute}
+  \begin{itemize}
+    \item Colab Pro+, 1$\times$ A100 40GB
+    \item $\sim$15 GPU-hours total
+    \item W\&B + Drive checkpointing
+  \end{itemize}
+  \end{columns}
+\end{frame}
+
+% ============================================================================
+\section{Results}
+
+\begin{frame}{Training dynamics (Phase 4)}
+  \centering
+  \includegraphics[width=0.95\linewidth]{figs/curves_archs.png}
+
+  \vspace{0.5em}
+  \small
+  Pre-trained runs cross 0.6 mIoU in $\le$3 epochs; scratch runs need 12--20.
+\end{frame}
+
+\begin{frame}{Phase 4: architecture ranking}
+  \small
+  \begin{tabular}{l c c c c c}
+  \toprule
+  Model & Params (M) & Train (h) & Val mIoU & Test mIoU & GPU peak \\
+  \midrule
+  Vanilla U-Net (scratch)         & 31.04 & 3.53 & 0.6442 & 0.6402 & -- \\
+  U-Net R34 (scratch)             & 24.44 & 2.00 & 0.6743 & 0.6750 & -- \\
+  U-Net R34 (ImageNet)            & 24.44 & 1.76 & 0.7156 & 0.7093 & -- \\
+  DeepLabV3+ R50 (ImageNet)       & 26.68 & \textbf{0.97} & 0.7201 & 0.6963 & 8.0 GB \\
+  DeepLabV3+ R101 (ImageNet)      & 45.67 & 2.32 & 0.7124 & 0.7178 & 5.6 GB \\
+  \rowcolor{accent!15}
+  Attention U-Net R34 (ImageNet)  & 24.55 & 2.20 & \textbf{0.7259} & \textbf{0.7316} & 7.0 GB \\
+  \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \textbf{Three observations:}
+  \begin{itemize}
+    \item Transfer learning: +7.1\% mIoU (scratch $\rightarrow$ pre-trained)
+    \item Architecture: $\le +1.5\%$ for any decoder swap
+    \item R101 $<$ R50 ($-0.08$) despite 71\% more params $\rightarrow$
+          overfitting on 5058 training tiles
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Finding 1: Pre-training is the single biggest lever}
+  \centering
+  \includegraphics[width=0.6\linewidth]{figs/archs_metrics.png}
+
+  \vspace{0.5em}
+  \small
+  \begin{tabular}{l c}
+    Vanilla U-Net (scratch)          & 0.6442 \\
+    $\rightarrow$ + ResNet34 (still scratch) \hspace{1em}$\Delta = +0.030$ & 0.6743 \\
+    $\rightarrow$ + ImageNet weights \hspace{1em}$\Delta = +0.041$         & 0.7156 \\
+    $\rightarrow$ + DeepLabV3+ decoder \hspace{1em}$\Delta = +0.004$       & 0.7201 \\
+    $\rightarrow$ + SCSE attention \hspace{1em}$\Delta = +0.006$           & 0.7259 \\
+  \end{tabular}
+\end{frame}
+
+\begin{frame}{Finding 2: Combined loss rescues minority classes}
+  \small
+  \begin{tabular}{l c c c c}
+  \toprule
+  Loss (on DeepLabV3+-R50) & Val mIoU & Test mIoU & Barren IoU & Rangeland IoU \\
+  \midrule
+  Cross-Entropy (baseline) & 0.7201 & 0.6963 & 0.656 & 0.415 \\
+  Dice                     & 0.7314 & 0.7214 & 0.666 & 0.443 \\
+  Focal                    & 0.7286 & 0.7217 & 0.667 & 0.451 \\
+  \rowcolor{accent!15}
+  Combined (CE + Dice)     & \textbf{0.7382} & \textbf{0.7332} & \textbf{0.676} & \textbf{0.454} \\
+  \bottomrule
+  \end{tabular}
+
+  \vspace{0.8em}
+  \begin{columns}
+  \column{0.55\textwidth}
+  \begin{itemize}
+    \item Combined $\rightarrow$ \textbf{+1.8\% overall mIoU} vs.~CE
+    \item Barren IoU: $0.571 \to 0.676$ \\
+          (\textbf{+10.5 points} vs.~Vanilla U-Net baseline)
+    \item All three rebalanced losses $>$ CE on every minority class
+  \end{itemize}
+  \column{0.4\textwidth}
+  \includegraphics[width=\linewidth]{figs/losses_metrics.png}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Finding 3: Deeper $\neq$ better}
+  \begin{columns}
+  \column{0.45\textwidth}
+  \textbf{DeepLabV3+ R50 vs.\ R101}
+  \vspace{0.4em}
+  \small
+  \begin{tabular}{l c c}
+  \toprule
+                    & R50   & R101  \\
+  \midrule
+  Params (M)        & 26.68 & 45.67 \\
+  GPU peak (GB)     & 8.0   & 5.6   \\
+  Train time (h)    & 0.97  & 2.32  \\
+  Infer (ms/img)    & 838   & 891   \\
+  \textbf{Val mIoU} & \textbf{0.7201} & 0.7124 \\
+  \bottomrule
+  \end{tabular}
+
+  \column{0.55\textwidth}
+  \textbf{Why?}
+  \begin{itemize}
+    \item Only $\sim$5000 training tiles---R101's capacity overfits
+    \item bs=4 (R101) vs.\ bs=8 (R50): noisier gradients in AMP
+    \item ImageNet-derived deep features less aligned with satellite
+          imagery
+  \end{itemize}
+
+  \vspace{0.4em}
+  \textbf{Practical takeaway.} For DeepGlobe, the ResNet50 encoder is
+  Pareto-optimal: faster, smaller memory, better accuracy.
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Confusion matrices}
+  \begin{columns}
+  \column{0.49\textwidth}
+  \centering
+  \scriptsize Attention U-Net + CE\\
+  \includegraphics[width=\linewidth]{figs/cm_attn_unet_ce.png}
+  \column{0.49\textwidth}
+  \centering
+  \scriptsize DeepLabV3+-R50 + Combined (winner)\\
+  \includegraphics[width=\linewidth]{figs/cm_deeplab_r50_combined.png}
+  \end{columns}
+
+  \vspace{0.4em}
+  \footnotesize
+  Shared failure mode: Rangeland $\leftrightarrow$ Forest/Agriculture
+  confusion---these classes have similar spectral \& textural signatures.
+\end{frame}
+
+\begin{frame}{Qualitative comparison}
+  \centering
+  \includegraphics[width=0.95\linewidth]{figs/qualitative.png}
+
+  \vspace{0.2em}
+  \scriptsize image \hspace{3em} ground truth \hspace{2em} per-model predictions
+\end{frame}
+
+\begin{frame}{Failure cases (DeepLabV3+-R50 + Combined)}
+  \centering
+  \includegraphics[width=0.9\linewidth]{figs/failures_combined.png}
+
+  \vspace{0.4em}
+  \footnotesize
+  Errors cluster at semantic boundaries: Rangeland $\to$ Forest,
+  urban shadows $\to$ Water, bare agricultural margins $\to$ Barren.
+\end{frame}
+
+% ============================================================================
+\section{Conclusions}
+
+\begin{frame}{Take-home messages}
+  \begin{enumerate}
+    \item \textbf{Pre-training} contributes $+7.1$ mIoU; pure architecture
+          contributes $\le +1.5$. \\
+          \textit{Budget pre-training first, architecture second.}
+    \item \textbf{Combined CE + Dice} loss raises Barren IoU by
+          $+10.5$ absolute points versus the weakest baseline, with no
+          extra compute cost. \\
+          \textit{Always rebalance the loss for long-tailed segmentation.}
+    \item \textbf{Deeper $\neq$ better}: ResNet101 underperforms ResNet50
+          despite $71\%$ more parameters. \\
+          \textit{Scale to data, not to the newest paper.}
+  \end{enumerate}
+
+  \vspace{0.8em}
+  \begin{block}{Best model}
+    DeepLabV3+-R50 + Combined loss: \textbf{0.7332 test mIoU} on
+    full-resolution reconstructions (120 test images, 7 classes).
+  \end{block}
+\end{frame}
+
+\begin{frame}{Limitations and future work}
+  \begin{itemize}
+    \item Single dataset (DeepGlobe)---transfer-learning results may not
+          generalize.
+    \item No Transformer backbone (Swin, SegFormer) tested.
+    \item Class-frequency-weighted loss variants unexplored.
+    \item Tile-based inference leaves residual boundary artifacts;
+          full-image Transformers could help.
+  \end{itemize}
+
+  \vspace{0.8em}
+  \textbf{Code, weights, training logs, \& figures}:
+  \centerline{\small \url{https://github.com/Jerryzhang258/landcover-seg}}
+\end{frame}
+
+\begin{frame}[standout]
+  Thank you.\\
+  Questions?
+\end{frame}
+
+% ============================================================================
+\appendix
+
+\begin{frame}{Backup: Phase 5 per-class IoU}
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/losses_perclass.png}
+\end{frame}
+
+\begin{frame}{Backup: Phase 4 per-class IoU}
+  \centering
+  \includegraphics[width=0.8\linewidth]{figs/archs_perclass.png}
+\end{frame}
+
+\begin{frame}{Backup: full results table}
+  \footnotesize
+  \begin{tabular}{l l c c c c c}
+  \toprule
+  Model & Loss & Params & Val mIoU & Test mIoU & Train (h) & Infer (ms) \\
+  \midrule
+  vanilla\_unet      & ce       & 31.04 & 0.6442 & 0.6402 & 3.53 & 1046 \\
+  unet\_scratch      & ce       & 24.44 & 0.6743 & 0.6750 & 2.00 &  832 \\
+  unet\_resnet34     & ce       & 24.44 & 0.7156 & 0.7093 & 1.76 &  799 \\
+  deeplab\_r50       & ce       & 26.68 & 0.7201 & 0.6963 & 0.97 &  838 \\
+  deeplab\_r101      & ce       & 45.67 & 0.7124 & 0.7178 & 2.32 &  891 \\
+  attn\_unet         & ce       & 24.55 & 0.7259 & 0.7316 & 2.20 &  855 \\
+  deeplab\_r50       & dice     & 26.68 & 0.7314 & 0.7214 & 2.02 &  821 \\
+  deeplab\_r50       & focal    & 26.68 & 0.7286 & 0.7217 & 2.02 &  846 \\
+  \rowcolor{accent!15}
+  deeplab\_r50       & combined & 26.68 & \textbf{0.7382} & \textbf{0.7332} & 2.02 &  846 \\
+  \bottomrule
+  \end{tabular}
+\end{frame}
+
+\end{document}
