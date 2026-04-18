@@ -207,12 +207,14 @@
   \end{tabular}
 
   \vspace{0.8em}
-  \textbf{Three observations:}
+  \textbf{Three observations (each controls for one variable):}
   \begin{itemize}
-    \item Transfer learning: +7.1\% mIoU (scratch $\rightarrow$ pre-trained)
-    \item Architecture: $\le +1.5\%$ for any decoder swap
-    \item R101 $<$ R50 ($-0.08$) despite 71\% more params $\rightarrow$
-          overfitting on 5058 training tiles
+    \item \textbf{Pre-training alone:} $+4.1$ mIoU
+          (U-Net R34: $0.674 \to 0.716$, same arch.)
+    \item \textbf{Decoder swap among pre-trained:} $\le +1.0$ mIoU in
+          either direction
+    \item \textbf{R101 vs R50:} val $-0.008$, test $+0.022$ (within
+          single-seed noise) despite $71\%$ more params
   \end{itemize}
 \end{frame}
 
@@ -357,9 +359,10 @@
           stacked with the architecture upgrade it yields $+10.5$ Barren
           points vs.\ the Vanilla U-Net baseline. \\
           \textit{Always rebalance the loss for long-tailed segmentation.}
-    \item \textbf{Deeper $\neq$ Pareto-optimal}: ResNet101 wins test mIoU
-          by only $+0.022$ over R50 while using $71\%$ more parameters
-          and $2.4\times$ training time. \\
+    \item \textbf{Deeper $\neq$ Pareto-optimal}: ResNet101 trails R50
+          on val ($-0.008$) and edges it on test ($+0.022$)---both within
+          single-seed noise---while using $71\%$ more parameters and
+          $2.4\times$ training time. \\
           \textit{Scale capacity to data, not to the newest paper.}
   \end{enumerate}
 
@@ -385,60 +388,21 @@
   \centerline{\small \url{https://github.com/Jerryzhang258/landcover-seg}}
 \end{frame}
 
-\begin{frame}[allowframebreaks]{References}
-  \footnotesize
-  \begin{thebibliography}{9}
-    \setlength{\itemsep}{0.3em}
-    \bibitem{demir2018}
-      I.~Demir et al.
-      \newblock DeepGlobe 2018: A challenge to parse the earth through
-      satellite images.
-      \newblock \emph{CVPR Workshops}, 2018.
-
-    \bibitem{ronneberger2015}
-      O.~Ronneberger, P.~Fischer, T.~Brox.
-      \newblock U-Net: Convolutional networks for biomedical image
-      segmentation.
-      \newblock \emph{MICCAI}, 2015.
-
-    \bibitem{chen2018}
-      L.-C.~Chen et al.
-      \newblock Encoder--decoder with atrous separable convolution for
-      semantic image segmentation (DeepLabV3+).
-      \newblock \emph{ECCV}, 2018.
-
-    \bibitem{he2016}
-      K.~He et al.
-      \newblock Deep residual learning for image recognition (ResNet).
-      \newblock \emph{CVPR}, 2016.
-
-    \bibitem{roy2018}
-      A.~G.~Roy, N.~Navab, C.~Wachinger.
-      \newblock Concurrent spatial and channel squeeze-and-excitation in
-      fully convolutional networks (SCSE).
-      \newblock \emph{MICCAI}, 2018.
-
-    \bibitem{milletari2016}
-      F.~Milletari, N.~Navab, S.-A.~Ahmadi.
-      \newblock V-Net and Dice loss for volumetric medical image
-      segmentation.
-      \newblock \emph{3DV}, 2016.
-
-    \bibitem{lin2017}
-      T.-Y.~Lin et al.
-      \newblock Focal loss for dense object detection.
-      \newblock \emph{ICCV}, 2017.
-
-    \bibitem{iakubovskii2019}
-      P.~Iakubovskii.
-      \newblock \emph{Segmentation Models PyTorch}.
-      \newblock \url{github.com/qubvel/segmentation_models.pytorch}, 2019.
-
-    \bibitem{jadon2020}
-      S.~Jadon.
-      \newblock A survey of loss functions for semantic segmentation.
-      \newblock \emph{IEEE CIBCB}, 2020.
-  \end{thebibliography}
+\begin{frame}{References}
+  \scriptsize
+  \setlength{\leftmargini}{1.2em}
+  \begin{enumerate}
+    \setlength{\itemsep}{0.15em}
+    \item Demir et al. DeepGlobe 2018: A challenge to parse the earth through satellite images. \emph{CVPR Workshops}, 2018.
+    \item Ronneberger, Fischer, Brox. U-Net: Convolutional networks for biomedical image segmentation. \emph{MICCAI}, 2015.
+    \item Chen et al. Encoder--decoder with atrous separable convolution for semantic image segmentation (DeepLabV3+). \emph{ECCV}, 2018.
+    \item He et al. Deep residual learning for image recognition (ResNet). \emph{CVPR}, 2016.
+    \item Roy, Navab, Wachinger. Concurrent spatial and channel squeeze-and-excitation in fully convolutional networks (SCSE). \emph{MICCAI}, 2018.
+    \item Milletari, Navab, Ahmadi. V-Net and Dice loss for volumetric medical image segmentation. \emph{3DV}, 2016.
+    \item Lin et al. Focal loss for dense object detection. \emph{ICCV}, 2017.
+    \item Iakubovskii. \emph{Segmentation Models PyTorch}. \url{github.com/qubvel/segmentation_models.pytorch}, 2019.
+    \item Jadon. A survey of loss functions for semantic segmentation. \emph{IEEE CIBCB}, 2020.
+  \end{enumerate}
 \end{frame}
 
 \begin{frame}[standout]
