@@ -218,7 +218,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Finding 1: Pre-training is the largest single-variable lever}
+\begin{frame}{Finding 1: Pre-training dominates the single-variable effects}
   \centering
   \small
   \begin{tabular}{l c c}
@@ -259,14 +259,14 @@
   \small
   \textbf{Loss-only effect (fixed arch.\ = DeepLabV3+-R50):}
   \begin{itemize}
-    \item Test mIoU: $0.696 \to 0.733$ \hspace{0.2em}(\textbf{+3.7 pts})
-    \item Barren test IoU: $0.656 \to 0.676$ \hspace{0.2em}(\textbf{+2.0 pts})
+    \item Test mIoU: $0.696 \to 0.733$ \hspace{0.2em}(\textbf{$+3.7$ pp})
+    \item Barren test IoU: $0.656 \to 0.676$ \hspace{0.2em}(\textbf{$+2.0$ pp})
     \item All three rebalanced losses $>$ CE on Barren, Water, Rangeland
   \end{itemize}
   \vspace{0.3em}
   \textbf{Stacked with arch.\ change} (vs.\ Vanilla U-Net + CE):
   \begin{itemize}
-    \item Barren: $0.571 \to 0.676$ \hspace{0.2em}(\textbf{+10.5 pts total})
+    \item Barren: $0.571 \to 0.676$ \hspace{0.2em}(\textbf{$+10.5$ pp total})
   \end{itemize}
   \column{0.38\textwidth}
   \includegraphics[width=\linewidth]{figs/losses_metrics.png}
@@ -293,19 +293,22 @@
   \end{tabular}
 
   \column{0.54\textwidth}
-  \textbf{Mixed result}
+  \textbf{Analysis}
   \begin{itemize}
-    \item R101 wins test mIoU by $+0.022$ but loses val by $-0.008$
-    \item $71\%$ more params, $2.4\times$ train time, $\sim 6\%$ slower
-          inference
-    \item bs=4 (R101) vs bs=8 (R50): R101 had noisier gradients during
-          training
+    \item R101 trails R50 on validation by $-0.008$ mIoU and exceeds
+          it on the test set by $+0.022$ mIoU; both differences lie
+          within single-seed variance.
+    \item R101 incurs $71\%$ more parameters, $2.4\times$ longer
+          training, and $\sim 6\%$ higher inference latency.
+    \item The smaller batch size (4 vs.\ 8) imposed by GPU memory may
+          further increase gradient variance for R101.
   \end{itemize}
 
   \vspace{0.4em}
-  \textbf{Takeaway.} For DeepGlobe's 5058-tile training set, the
-  ResNet50 encoder offers a better \emph{cost / accuracy} ratio. A
-  small test-set gain from R101 does not justify its 2.4$\times$ cost.
+  \textbf{Conclusion.} On the DeepGlobe training set
+  (5{,}058 tiles), ResNet50 offers a superior cost--accuracy trade-off;
+  the marginal test-set improvement from ResNet101 does not justify
+  its $2.4\times$ training cost.
   \end{columns}
 \end{frame}
 
@@ -348,22 +351,30 @@
 % ============================================================================
 \section{Conclusions}
 
-\begin{frame}{Take-home messages}
+\begin{frame}{Summary of findings}
   \begin{enumerate}
-    \item \textbf{Pre-training} is the biggest single-variable lever:
-          $+4.1$ mIoU holding architecture fixed, vs. $\le +1.0$ for any
-          single decoder swap among pretrained models. \\
-          \textit{Budget pre-training first, architecture second.}
-    \item \textbf{Combined CE + Dice} on the same architecture raises
-          test mIoU by $+3.7$ and Barren IoU by $+2.0$ over CE alone;
-          stacked with the architecture upgrade it yields $+10.5$ Barren
-          points vs.\ the Vanilla U-Net baseline. \\
-          \textit{Always rebalance the loss for long-tailed segmentation.}
-    \item \textbf{Deeper $\neq$ Pareto-optimal}: ResNet101 trails R50
-          on val ($-0.008$) and edges it on test ($+0.022$)---both within
-          single-seed noise---while using $71\%$ more parameters and
-          $2.4\times$ training time. \\
-          \textit{Scale capacity to data, not to the newest paper.}
+    \item \textbf{Pre-training is the dominant single-variable factor.}
+          Holding architecture fixed, ImageNet pre-training contributes
+          $+4.1$ mIoU, whereas any single decoder swap among pre-trained
+          models contributes at most $+1.0$ mIoU. \\
+          \textit{Implication: prioritize pre-training over architectural
+          sophistication.}
+    \item \textbf{Loss rebalancing is complementary to architecture.}
+          Holding architecture at DeepLabV3+-R50, the Combined
+          CE + Dice loss raises test mIoU by $+3.7$ pp and Barren-class
+          IoU by $+2.0$ pp over Cross-Entropy; stacked with the
+          architecture upgrade, the total Barren-class gain over the
+          Vanilla U-Net baseline is $+10.5$ pp. \\
+          \textit{Implication: rebalance the loss function for
+          long-tailed class distributions.}
+    \item \textbf{A deeper encoder is not Pareto-dominant.}
+          ResNet101 trails ResNet50 on the validation set
+          ($-0.008$ mIoU) and marginally surpasses it on the test set
+          ($+0.022$ mIoU); both differences fall within single-seed
+          variance, while parameters grow by $71\%$ and training time
+          by $2.4\times$. \\
+          \textit{Implication: match encoder capacity to training-set
+          size.}
   \end{enumerate}
 
   \vspace{0.6em}
@@ -384,25 +395,53 @@
   \end{itemize}
 
   \vspace{0.8em}
-  \textbf{Code, weights, training logs, \& figures}:
+  \textbf{Code, weights, training logs, and figures}:
   \centerline{\small \url{https://github.com/Jerryzhang258/landcover-seg}}
 \end{frame}
 
 \begin{frame}{References}
   \scriptsize
-  \setlength{\leftmargini}{1.2em}
-  \begin{enumerate}
-    \setlength{\itemsep}{0.15em}
-    \item Demir et al. DeepGlobe 2018: A challenge to parse the earth through satellite images. \emph{CVPR Workshops}, 2018.
-    \item Ronneberger, Fischer, Brox. U-Net: Convolutional networks for biomedical image segmentation. \emph{MICCAI}, 2015.
-    \item Chen et al. Encoder--decoder with atrous separable convolution for semantic image segmentation (DeepLabV3+). \emph{ECCV}, 2018.
-    \item He et al. Deep residual learning for image recognition (ResNet). \emph{CVPR}, 2016.
-    \item Roy, Navab, Wachinger. Concurrent spatial and channel squeeze-and-excitation in fully convolutional networks (SCSE). \emph{MICCAI}, 2018.
-    \item Milletari, Navab, Ahmadi. V-Net and Dice loss for volumetric medical image segmentation. \emph{3DV}, 2016.
-    \item Lin et al. Focal loss for dense object detection. \emph{ICCV}, 2017.
-    \item Iakubovskii. \emph{Segmentation Models PyTorch}. \url{github.com/qubvel/segmentation_models.pytorch}, 2019.
-    \item Jadon. A survey of loss functions for semantic segmentation. \emph{IEEE CIBCB}, 2020.
-  \end{enumerate}
+  \begin{thebibliography}{9}
+    \setlength{\itemsep}{0.2em}
+    \setlength{\parsep}{0pt}
+    \bibitem{demir2018}
+      I.~Demir, K.~Koperski, D.~Lindenbaum, \emph{et~al.},
+      ``DeepGlobe 2018: A challenge to parse the Earth through satellite
+      images,'' in \emph{Proc. IEEE/CVF CVPR Workshops}, 2018.
+    \bibitem{ronneberger2015}
+      O.~Ronneberger, P.~Fischer, and T.~Brox,
+      ``U-Net: Convolutional networks for biomedical image segmentation,''
+      in \emph{Proc. MICCAI}, 2015, pp.~234--241.
+    \bibitem{chen2018}
+      L.-C.~Chen, Y.~Zhu, G.~Papandreou, F.~Schroff, and H.~Adam,
+      ``Encoder--decoder with atrous separable convolution for semantic
+      image segmentation,'' in \emph{Proc. ECCV}, 2018, pp.~801--818.
+    \bibitem{he2016}
+      K.~He, X.~Zhang, S.~Ren, and J.~Sun,
+      ``Deep residual learning for image recognition,''
+      in \emph{Proc. IEEE CVPR}, 2016, pp.~770--778.
+    \bibitem{roy2018}
+      A.~G.~Roy, N.~Navab, and C.~Wachinger,
+      ``Concurrent spatial and channel squeeze-and-excitation in fully
+      convolutional networks,'' in \emph{Proc. MICCAI}, 2018, pp.~421--429.
+    \bibitem{milletari2016}
+      F.~Milletari, N.~Navab, and S.-A.~Ahmadi,
+      ``V-Net: Fully convolutional neural networks for volumetric medical
+      image segmentation,'' in \emph{Proc. 3DV}, 2016, pp.~565--571.
+    \bibitem{lin2017}
+      T.-Y.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'{a}r,
+      ``Focal loss for dense object detection,''
+      in \emph{Proc. IEEE ICCV}, 2017, pp.~2980--2988.
+    \bibitem{jadon2020}
+      S.~Jadon,
+      ``A survey of loss functions for semantic segmentation,''
+      in \emph{Proc. IEEE CIBCB}, 2020, pp.~1--7.
+    \bibitem{iakubovskii2019}
+      P.~Iakubovskii,
+      ``Segmentation Models PyTorch,'' GitHub repository, 2019.
+      [Online]. Available:
+      \url{https://github.com/qubvel/segmentation_models.pytorch}
+  \end{thebibliography}
 \end{frame}
 
 \begin{frame}[standout]
