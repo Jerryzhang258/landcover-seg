@@ -337,29 +337,39 @@ Attention U-Net R34 (pre-trained)& 24.55 & 2.20 & 6968 &  855 & \textbf{0.7259} 
 The key numeric findings:
 
 \begin{enumerate}
-\item \textbf{Transfer learning contributes far more than architecture.}
-      Replacing Vanilla U-Net with a ResNet34-backboned U-Net (both
-      randomly initialized) improves val mIoU by $+0.030$, a
-      purely-architectural contribution. Switching from random
-      initialization to ImageNet pre-trained encoder adds a further
-      $+0.041$. Subsequent architectural changes from ResNet34 $\rightarrow$
-      DeepLabV3+-R50 $\rightarrow$ Attention U-Net yield only $+0.010$
-      combined. The 7.1-point ``pre-training jump'' dominates the $\le 1.5$
-      architectural delta that the field has historically emphasized.
-\item \textbf{ResNet101 does not beat ResNet50.} Despite having 71\% more
-      parameters (45.67M vs.~26.68M), DeepLabV3+-R101 reaches $0.7124$
-      val mIoU versus R50's $0.7201$. This contradicts the proposal's
-      pre-registered prediction that R101 would be $\sim$1--2 points higher,
-      and we attribute it to two factors: (i) the training set of
-      $\sim$5000 tiles is small relative to R101's capacity, inducing
-      overfitting; (ii) the bs=4 constraint (R101 does not fit at bs=8)
-      increases gradient noise in the AMP optimizer relative to R50's bs=8.
-      The practical consequence is that R101 is slower ($+53$ ms/image at
-      inference) and more memory-hungry without accuracy benefit.
-\item \textbf{Attention U-Net wins overall}, but only by $+0.006$ val mIoU
-      over DeepLabV3+-R50. Given that R50 trains 2.3$\times$ faster, it is
-      arguably the better choice when many loss-function ablations are
-      planned---this is the rationale for using R50 in Phase 5.
+\item \textbf{Transfer learning contributes more than any single
+      decoder swap.} Replacing Vanilla U-Net with a ResNet34-backboned
+      U-Net (both randomly initialized) improves val mIoU by $+0.030$
+      (architecture only). Switching \emph{that same} U-Net+ResNet34
+      from random initialization to ImageNet weights adds a further
+      $+0.041$ (pre-training alone, with architecture held fixed).
+      Subsequent decoder changes among pretrained models
+      (ResNet34 $\rightarrow$ DeepLabV3+-R50 $\rightarrow$ Attention U-Net)
+      add at most $+0.006$ each. Thus the single-variable pre-training
+      effect ($+0.041$) is larger than any single-variable architecture
+      swap ($\le +0.030$, and $\le +0.010$ among pretrained models),
+      and the cumulative Vanilla-U-Net-scratch~$\rightarrow$~Attention-U-Net-pretrained
+      gain is $+0.082$ on validation.
+\item \textbf{ResNet101 is not Pareto-dominant against ResNet50.}
+      DeepLabV3+-R101 trails R50 on val by $-0.008$ mIoU (0.7124 vs.\
+      0.7201) but edges it on test by $+0.022$ (0.7178 vs.\ 0.6963);
+      both gaps are within the noise expected from a single training
+      seed with bs=4. This contradicts the proposal's pre-registered
+      prediction that R101 would be $\sim$1--2 points higher on
+      validation, and we attribute it to two factors: (i) the training
+      set of $\sim$5000 tiles is small relative to R101's capacity;
+      (ii) the bs=4 constraint (R101 does not fit at bs=8) increases
+      gradient noise in the AMP optimizer relative to R50's bs=8. The
+      practical consequence is that R101 is $+53$ ms/image slower at
+      inference, uses 71\% more parameters, and trains 2.4$\times$
+      longer \emph{without a clear accuracy benefit}: the test-set
+      margin ($+0.022$) is well within single-seed variance.
+\item \textbf{Attention U-Net wins overall}, but only by $+0.006$ val
+      mIoU over DeepLabV3+-R50. Given that DeepLabV3+-R50 trains
+      2.3$\times$ faster than Attention U-Net (0.97~h vs.\ 2.20~h)
+      under identical hyperparameters, R50 is arguably the better
+      choice when many loss-function ablations are planned---this is
+      the rationale for using R50 in Phase 5.
 \end{enumerate}
 
 Figure~\ref{fig:arch-bars} visualizes the final metric bars and
@@ -490,12 +500,15 @@ cluster at semantic boundaries.}
 \subsection{Efficiency vs.~accuracy}
 
 The results also speak to cost-accuracy trade-offs. DeepLabV3+-R50 reaches
-a validation mIoU within 0.006 of the best (Attention U-Net) while training
-2.3$\times$ faster and using comparable GPU memory. ResNet101 is strictly
-dominated: more parameters, more memory, slower inference, \emph{lower}
-accuracy. Vanilla U-Net has the largest parameter count (31.0M) yet the
-lowest accuracy, suggesting that for this task the encoder's inductive
-biases and ImageNet pre-training matter more than raw capacity.
+a validation mIoU within 0.006 of the best (Attention U-Net) while
+training 2.3$\times$ faster and using comparable GPU memory. ResNet101
+is \emph{not} Pareto-dominant against ResNet50: its test mIoU is
+marginally higher ($+0.022$) but val mIoU is lower ($-0.008$)---both
+within single-seed noise---while training and inference are
+strictly worse (2.4$\times$ longer training, 53~ms/image slower).
+Vanilla U-Net has the largest parameter count (31.0M) yet the lowest
+accuracy, suggesting that for this task the encoder's inductive biases
+and ImageNet pre-training matter more than raw capacity.
 
 \section{Conclusions and Limitations}\label{sec:conclusion}
 
@@ -529,7 +542,9 @@ loss function. Our three central findings are:
 
 \textbf{Best configuration.} DeepLabV3+-R50 with Combined loss achieves
 a test mIoU of \textbf{0.7332} on full-resolution reconstructed 120-image
-test set, exceeding published baselines for this dataset.
+test set, exceeding the proposal's $\ge 0.55$ success threshold by
+$+18$ absolute points and the weakest in-study baseline (Vanilla U-Net
++ CE at 0.6402) by $+9.3$ points.
 
 \textbf{Limitations.} This study uses a single dataset (DeepGlobe); the
 transfer-learning findings may not generalize to tasks with larger
