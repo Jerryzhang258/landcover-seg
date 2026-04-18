@@ -191,7 +191,7 @@
 \end{frame}
 
 \begin{frame}{Phase 4: architecture ranking}
-  \small
+  \footnotesize
   \begin{tabular}{l c c c c c}
   \toprule
   Model & Params (M) & Train (h) & Val mIoU & Test mIoU & GPU peak \\
@@ -206,21 +206,20 @@
   \bottomrule
   \end{tabular}
 
-  \vspace{0.8em}
-  \textbf{Three observations (each controls for one variable):}
+  \vspace{0.6em}
+  \small
+  \textbf{Three single-variable observations:}
   \begin{itemize}
-    \item \textbf{Pre-training alone:} $+4.1$ mIoU
-          (U-Net R34: $0.674 \to 0.716$, same arch.)
-    \item \textbf{Decoder swap among pre-trained:} $\le +1.0$ mIoU in
-          either direction
-    \item \textbf{R101 vs R50:} val $-0.008$, test $+0.022$ (within
-          single-seed noise) despite $71\%$ more params
+    \setlength{\itemsep}{0.1em}
+    \item \textbf{Pre-training alone:} $+4.1$ mIoU (U-Net R34, same arch.)
+    \item \textbf{Any decoder swap (pre-trained):} $\le +1.0$ mIoU
+    \item \textbf{R101 vs R50:} val $-0.008$, test $+0.022$ (within noise)
   \end{itemize}
 \end{frame}
 
-\begin{frame}{Finding 1: Pre-training dominates the single-variable effects}
+\begin{frame}{Finding 1: Pre-training is the dominant factor}
   \centering
-  \small
+  \footnotesize
   \begin{tabular}{l c c}
   \toprule
   Configuration (each row changes only one factor) & Val mIoU & $\Delta$ \\
@@ -235,12 +234,12 @@
 
   \vspace{0.8em}
   \small
-  \textbf{Isolated effect of pre-training (row 3 vs row 2):} \textbf{$+4.1$ mIoU}\\
-  \textbf{Isolated effect of any single decoder change:} $\le +1.0$
+  \textbf{Isolated effect of pre-training:} \textbf{$+4.1$ mIoU} \quad
+  \textbf{Isolated effect of any single decoder swap:} $\le +1.0$
 \end{frame}
 
-\begin{frame}{Finding 2: Combined loss rescues minority classes}
-  \small
+\begin{frame}{Finding 2: Combined loss helps minority classes}
+  \footnotesize
   \begin{tabular}{l c c c c}
   \toprule
   Loss (on DeepLabV3+-R50) & Val mIoU & Test mIoU & Barren IoU & Rangeland IoU \\
@@ -253,32 +252,33 @@
   \bottomrule
   \end{tabular}
 
-  \vspace{0.8em}
-  \begin{columns}
+  \vspace{0.5em}
+  \begin{columns}[T]
   \column{0.58\textwidth}
-  \small
-  \textbf{Loss-only effect (fixed arch.\ = DeepLabV3+-R50):}
+  \footnotesize
+  \textbf{Loss-only effect} (fixed DeepLabV3+-R50):
   \begin{itemize}
-    \item Test mIoU: $0.696 \to 0.733$ \hspace{0.2em}(\textbf{$+3.7$ pp})
-    \item Barren test IoU: $0.656 \to 0.676$ \hspace{0.2em}(\textbf{$+2.0$ pp})
-    \item All three rebalanced losses $>$ CE on Barren, Water, Rangeland
+    \setlength{\itemsep}{0.1em}
+    \item Test mIoU: $0.696 \to 0.733$ \ (\textbf{$+3.7$ pp})
+    \item Barren test IoU: $0.656 \to 0.676$ \ (\textbf{$+2.0$ pp})
   \end{itemize}
-  \vspace{0.3em}
-  \textbf{Stacked with arch.\ change} (vs.\ Vanilla U-Net + CE):
+  \vspace{0.2em}
+  \textbf{Stacked with architecture} (vs.\ Vanilla U-Net + CE):
   \begin{itemize}
-    \item Barren: $0.571 \to 0.676$ \hspace{0.2em}(\textbf{$+10.5$ pp total})
+    \setlength{\itemsep}{0.1em}
+    \item Barren: $0.571 \to 0.676$ \ (\textbf{$+10.5$ pp})
   \end{itemize}
-  \column{0.38\textwidth}
+  \column{0.40\textwidth}
   \includegraphics[width=\linewidth]{figs/losses_metrics.png}
   \end{columns}
 \end{frame}
 
-\begin{frame}{Finding 3: Deeper $\neq$ Pareto-optimal}
-  \begin{columns}
-  \column{0.46\textwidth}
+\begin{frame}{Finding 3: Deeper encoder is not Pareto-optimal}
+  \begin{columns}[T]
+  \column{0.42\textwidth}
   \textbf{DeepLabV3+ R50 vs.\ R101}
   \vspace{0.4em}
-  \small
+  \footnotesize
   \begin{tabular}{l c c}
   \toprule
                     & R50   & R101  \\
@@ -292,23 +292,23 @@
   \bottomrule
   \end{tabular}
 
-  \column{0.54\textwidth}
+  \column{0.56\textwidth}
+  \footnotesize
   \textbf{Analysis}
   \begin{itemize}
-    \item R101 trails R50 on validation by $-0.008$ mIoU and exceeds
-          it on the test set by $+0.022$ mIoU; both differences lie
-          within single-seed variance.
-    \item R101 incurs $71\%$ more parameters, $2.4\times$ longer
-          training, and $\sim 6\%$ higher inference latency.
-    \item The smaller batch size (4 vs.\ 8) imposed by GPU memory may
-          further increase gradient variance for R101.
+    \setlength{\itemsep}{0.15em}
+    \item R101 trails R50 on val ($-0.008$ mIoU) and exceeds it on
+          test ($+0.022$ mIoU)---both within single-seed variance.
+    \item R101 incurs $71\%$ more parameters, $2.4\times$ training
+          time, and $\sim\!6\%$ higher inference latency.
+    \item The smaller batch size (4 vs.\ 8) imposed by GPU memory
+          may further increase R101's gradient variance.
   \end{itemize}
 
-  \vspace{0.4em}
-  \textbf{Conclusion.} On the DeepGlobe training set
-  (5{,}058 tiles), ResNet50 offers a superior cost--accuracy trade-off;
-  the marginal test-set improvement from ResNet101 does not justify
-  its $2.4\times$ training cost.
+  \vspace{0.3em}
+  \textbf{Conclusion.} ResNet50 offers a superior cost--accuracy
+  trade-off; the non-significant test-set gain of R101 does not
+  justify its $2.4\times$ training cost.
   \end{columns}
 \end{frame}
 
@@ -352,35 +352,29 @@
 \section{Conclusions}
 
 \begin{frame}{Summary of findings}
+  \small
   \begin{enumerate}
+    \setlength{\itemsep}{0.3em}
     \item \textbf{Pre-training is the dominant single-variable factor.}
-          Holding architecture fixed, ImageNet pre-training contributes
-          $+4.1$ mIoU, whereas any single decoder swap among pre-trained
-          models contributes at most $+1.0$ mIoU. \\
-          \textit{Implication: prioritize pre-training over architectural
-          sophistication.}
+          ImageNet pre-training contributes $+4.1$ mIoU (architecture
+          fixed); any single decoder swap contributes $\le +1.0$ mIoU.
+          \textit{$\Rightarrow$ prioritize pre-training over architecture.}
     \item \textbf{Loss rebalancing is complementary to architecture.}
-          Holding architecture at DeepLabV3+-R50, the Combined
-          CE + Dice loss raises test mIoU by $+3.7$ pp and Barren-class
-          IoU by $+2.0$ pp over Cross-Entropy; stacked with the
-          architecture upgrade, the total Barren-class gain over the
-          Vanilla U-Net baseline is $+10.5$ pp. \\
-          \textit{Implication: rebalance the loss function for
-          long-tailed class distributions.}
+          Combined CE + Dice on DeepLabV3+-R50 adds $+3.7$ pp test mIoU
+          and $+2.0$ pp Barren IoU over CE; stacked with the architecture
+          upgrade, Barren-class gain reaches $+10.5$ pp.
+          \textit{$\Rightarrow$ rebalance the loss for long-tailed classes.}
     \item \textbf{A deeper encoder is not Pareto-dominant.}
-          ResNet101 trails ResNet50 on the validation set
-          ($-0.008$ mIoU) and marginally surpasses it on the test set
-          ($+0.022$ mIoU); both differences fall within single-seed
-          variance, while parameters grow by $71\%$ and training time
-          by $2.4\times$. \\
-          \textit{Implication: match encoder capacity to training-set
-          size.}
+          R101 trails R50 on val ($-0.008$) and marginally exceeds it on
+          test ($+0.022$)---both within single-seed variance---at $71\%$
+          more parameters and $2.4\times$ training cost.
+          \textit{$\Rightarrow$ match capacity to training-set size.}
   \end{enumerate}
 
-  \vspace{0.6em}
+  \vspace{0.4em}
   \begin{block}{Best model}
-    DeepLabV3+-R50 + Combined loss: \textbf{0.7332 test mIoU} on
-    full-resolution reconstructions (120 test images, 7 classes).
+    \small DeepLabV3+-R50 + Combined loss: \textbf{0.7332 test mIoU}
+    on full-resolution reconstructions (120 test images, 7 classes).
   \end{block}
 \end{frame}
 
@@ -402,68 +396,48 @@
 \begin{frame}{References}
   \scriptsize
   \begin{thebibliography}{9}
-    \setlength{\itemsep}{0.2em}
+    \setlength{\itemsep}{0.1em}
     \setlength{\parsep}{0pt}
     \bibitem{demir2018}
-      I.~Demir, K.~Koperski, D.~Lindenbaum, \emph{et~al.},
-      ``DeepGlobe 2018: A challenge to parse the Earth through satellite
-      images,'' in \emph{Proc. IEEE/CVF CVPR Workshops}, 2018.
+      I.~Demir \emph{et~al.}, ``DeepGlobe 2018: A challenge to parse
+      the Earth through satellite images,'' \emph{CVPR Workshops}, 2018.
     \bibitem{ronneberger2015}
-      O.~Ronneberger, P.~Fischer, and T.~Brox,
-      ``U-Net: Convolutional networks for biomedical image segmentation,''
-      in \emph{Proc. MICCAI}, 2015, pp.~234--241.
+      O.~Ronneberger, P.~Fischer, T.~Brox,
+      ``U-Net: Convolutional networks for biomedical image
+      segmentation,'' \emph{MICCAI}, 2015.
     \bibitem{chen2018}
-      L.-C.~Chen, Y.~Zhu, G.~Papandreou, F.~Schroff, and H.~Adam,
-      ``Encoder--decoder with atrous separable convolution for semantic
-      image segmentation,'' in \emph{Proc. ECCV}, 2018, pp.~801--818.
+      L.-C.~Chen \emph{et~al.}, ``Encoder--decoder with atrous separable
+      convolution for semantic image segmentation,'' \emph{ECCV}, 2018.
     \bibitem{he2016}
-      K.~He, X.~Zhang, S.~Ren, and J.~Sun,
+      K.~He, X.~Zhang, S.~Ren, J.~Sun,
       ``Deep residual learning for image recognition,''
-      in \emph{Proc. IEEE CVPR}, 2016, pp.~770--778.
+      \emph{CVPR}, 2016.
     \bibitem{roy2018}
-      A.~G.~Roy, N.~Navab, and C.~Wachinger,
+      A.~G.~Roy, N.~Navab, C.~Wachinger,
       ``Concurrent spatial and channel squeeze-and-excitation in fully
-      convolutional networks,'' in \emph{Proc. MICCAI}, 2018, pp.~421--429.
+      convolutional networks,'' \emph{MICCAI}, 2018.
     \bibitem{milletari2016}
-      F.~Milletari, N.~Navab, and S.-A.~Ahmadi,
-      ``V-Net: Fully convolutional neural networks for volumetric medical
-      image segmentation,'' in \emph{Proc. 3DV}, 2016, pp.~565--571.
+      F.~Milletari, N.~Navab, S.-A.~Ahmadi,
+      ``V-Net: Fully convolutional neural networks for volumetric
+      medical image segmentation,'' \emph{3DV}, 2016.
     \bibitem{lin2017}
-      T.-Y.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'{a}r,
-      ``Focal loss for dense object detection,''
-      in \emph{Proc. IEEE ICCV}, 2017, pp.~2980--2988.
+      T.-Y.~Lin \emph{et~al.}, ``Focal loss for dense object detection,''
+      \emph{ICCV}, 2017.
     \bibitem{jadon2020}
-      S.~Jadon,
-      ``A survey of loss functions for semantic segmentation,''
-      in \emph{Proc. IEEE CIBCB}, 2020, pp.~1--7.
+      S.~Jadon, ``A survey of loss functions for semantic
+      segmentation,'' \emph{IEEE CIBCB}, 2020.
     \bibitem{iakubovskii2019}
-      P.~Iakubovskii,
-      ``Segmentation Models PyTorch,'' GitHub repository, 2019.
-      [Online]. Available:
+      P.~Iakubovskii, ``Segmentation Models PyTorch,'' 2019.
       \url{https://github.com/qubvel/segmentation_models.pytorch}
   \end{thebibliography}
 \end{frame}
 
-\begin{frame}[standout]
-  Thank you.\\
-  Questions?
-\end{frame}
-
 % ============================================================================
-\appendix
+\section{Full results}
 
-\begin{frame}{Backup: Phase 5 per-class IoU}
-  \centering
-  \includegraphics[width=0.8\linewidth]{figs/losses_perclass.png}
-\end{frame}
-
-\begin{frame}{Backup: Phase 4 per-class IoU}
-  \centering
-  \includegraphics[width=0.8\linewidth]{figs/archs_perclass.png}
-\end{frame}
-
-\begin{frame}{Backup: full results table}
+\begin{frame}{Full results table (all nine runs)}
   \footnotesize
+  \centering
   \begin{tabular}{l l c c c c c}
   \toprule
   Model & Loss & Params & Val mIoU & Test mIoU & Train (h) & Infer (ms) \\
@@ -480,6 +454,24 @@
   deeplab\_r50       & combined & 26.68 & \textbf{0.7382} & \textbf{0.7332} & 2.02 &  846 \\
   \bottomrule
   \end{tabular}
+\end{frame}
+
+\begin{frame}{Per-class IoU}
+  \begin{columns}[T]
+  \column{0.5\textwidth}
+  \centering
+  \scriptsize Phase 4: architectures (CE loss)\\
+  \includegraphics[width=\linewidth]{figs/archs_perclass.png}
+  \column{0.5\textwidth}
+  \centering
+  \scriptsize Phase 5: losses (DeepLabV3+-R50)\\
+  \includegraphics[width=\linewidth]{figs/losses_perclass.png}
+  \end{columns}
+\end{frame}
+
+\begin{frame}[standout]
+  Thank you.\\
+  Questions?
 \end{frame}
 
 \end{document}
