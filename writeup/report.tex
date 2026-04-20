@@ -43,16 +43,16 @@ pre-training, and loss function. A 3$\times$3 tiling pipeline with
 overlap-averaged sliding-window reconstruction handles the native
 resolution. Varying one factor at a time, we find that
 (i) on a fixed architecture, ImageNet pre-training contributes $+4.1$
-mIoU---larger than any single decoder swap ($\le +1.0$);
+pp mIoU---larger than any single decoder swap ($\le +1.0$ pp);
 (ii) on DeepLabV3+-R50, replacing Cross-Entropy with a Combined
 CE$+$Dice loss raises test mIoU by $+3.7$ pp and Barren-class IoU by
 $+2.0$ pp; and
 (iii) ResNet101 is not Pareto-dominant over ResNet50---its $+0.022$
 test-mIoU gain is offset by a $-0.008$ validation deficit (within
 single-seed variance), $71\%$ more parameters, and $2.4\times$ training
-cost. The best configuration (DeepLabV3+-R50 with Combined loss) attains
-$0.7332$ test mIoU on full-resolution reconstructions, exceeding the
-Vanilla U-Net baseline by $+9.3$ pp. Code and trained weights:
+cost. The best configuration tested (DeepLabV3+-R50 with Combined loss)
+attains $0.7332$ test mIoU on full-resolution reconstructions, exceeding
+the Vanilla U-Net baseline by $+9.3$ pp. Code and trained weights:
 \url{https://github.com/Jerryzhang258/landcover-seg}.
 \end{abstract}
 
@@ -135,7 +135,7 @@ its benefit is known to vary by domain: datasets whose low-level statistics
 listed the magnitude of this gain as a hypothesis to be verified.
 
 \textbf{Loss functions for imbalanced segmentation.}  Dice
-loss~\citep{milletari2016vnet} directly optimizes the Sorensen--Dice
+loss~\citep{milletari2016vnet} directly optimizes the S\o{}rensen--Dice
 coefficient and implicitly rebalances class contributions through its
 ratio-based form, but can produce noisy gradients on classes with very few
 pixels. Focal loss~\citep{lin2017focal} down-weights easy (well-classified)
@@ -196,10 +196,13 @@ from hard, non-overlapping stitching.
 
 \subsection{Architectures and configurations}
 
-Six architectures form the Phase 4 (architecture) ablation. All use a single
-segmentation head over a ResNet-like encoder; ``scratch'' denotes random
-initialization of the encoder, ``pre-trained'' denotes ImageNet-initialized
-weights.
+Six architectures form the Phase 4 (architecture) ablation. With the
+exception of the Vanilla U-Net---which uses the original
+Ronneberger-style double-convolution encoder implemented directly in
+PyTorch---all variants pair a single segmentation head with a
+ResNet-family encoder from \texttt{segmentation\_models.pytorch}.
+``Scratch'' denotes random initialization of the encoder;
+``pre-trained'' denotes ImageNet-initialized weights.
 
 \begin{itemize}
 \item \textbf{Vanilla U-Net} (scratch): the Ronneberger et al.~design with
@@ -271,7 +274,7 @@ asserting \texttt{stitch(tile(x)) == x} on random 2448$^2$ arrays for both
 \end{subfigure}\hfill
 \begin{subfigure}[t]{0.44\linewidth}
   \includegraphics[width=\linewidth]{figs/samples.png}
-  \caption{A representative image and its RGB-encoded mask.}
+  \caption{Representative images and their RGB-encoded masks.}
   \label{fig:samples}
 \end{subfigure}
 \caption{Dataset overview. The color map in the right panel follows the
@@ -310,7 +313,8 @@ at full resolution. The columns are sorted by test mIoU descending.
 \caption{\textbf{Phase 4: architecture comparison.} All use cross-entropy.
 ``Test mIoU'' is computed on reconstructed $2448^2$ predictions over 120
 test images. GPU peak memory is measured during training at batch size 8
-(4 for R101).}\label{tab:arch}
+(4 for R101); ``--'' indicates runs that predate the peak-memory
+instrumentation and for which the counter was not logged.}\label{tab:arch}
 \begin{tabular}{l c c c c c c}
 \toprule
 Architecture & Params & Train time & GPU peak & Infer. & Val mIoU & Test mIoU \\
@@ -428,11 +432,11 @@ The most consequential finding is minority-class recovery: using the
 Combined loss, the test Barren IoU rises from the CE baseline's 0.656
 to 0.676, and---when comparing against the weakest (Vanilla U-Net + CE)
 configuration---from 0.571 to 0.676, a \textbf{10.5 absolute-point}
-improvement on a class that occupies roughly 2\% of pixels. The
-Rangeland IoU, which is the hardest class across all experiments, also
-improves from 0.415 to 0.454 (+9.4\%). Overall mean test mIoU rises
-from 0.6963 to 0.7332. Focal and Dice each individually beat CE by a
-smaller margin but fall short of the combination.
+improvement on one of the two rarest non-ignored classes (Barren,
+Fig.~\ref{fig:classdist}). The Rangeland IoU, which is the hardest class
+across all experiments, also improves from 0.415 to 0.454 (+9.4\%).
+Overall mean test mIoU rises from 0.6963 to 0.7332. Focal and Dice each
+individually beat CE by a smaller margin but fall short of the combination.
 
 Figure~\ref{fig:cm} shows normalized confusion matrices for Attention
 U-Net~+~CE (Phase 4 winner) and DeepLabV3+-R50~+~Combined (Phase 5
@@ -509,19 +513,19 @@ Segmentation, isolating the effects of architecture, pre-training, and
 loss function. Our three central findings are:
 
 \begin{enumerate}
-\item \textbf{Pre-training is the single largest single-variable lever.}
+\item \textbf{Pre-training is the dominant single-variable factor.}
       Holding the architecture fixed at U-Net + ResNet34, switching from
-      random initialization to ImageNet weights adds $+4.1$ mIoU. Among
-      pretrained models, swapping the decoder (U-Net $\to$ DeepLabV3+ $\to$
-      Attention U-Net) adds at most $+1.0$. The combined upgrade from
-      Vanilla U-Net (scratch) to Attention U-Net (ImageNet) yields
-      $+8.2$ mIoU on validation.
+      random initialization to ImageNet weights adds $+4.1$ pp mIoU.
+      Among pretrained models, swapping the decoder
+      (U-Net $\to$ DeepLabV3+ $\to$ Attention U-Net) adds at most
+      $+1.0$ pp. The combined upgrade from Vanilla U-Net (scratch) to
+      Attention U-Net (ImageNet) yields $+8.2$ pp on validation.
 \item \textbf{Combined CE~+~Dice loss is the most effective defense
       against class imbalance} in our setting. Holding the architecture
       at DeepLabV3+-R50, the loss-only swap (CE $\to$ Combined) raises
-      Barren test IoU by $+2.0$ points and mean test IoU by $+3.7$.
+      Barren test IoU by $+2.0$ pp and mean test IoU by $+3.7$ pp.
       Stacking the loss improvement on top of the architecture upgrade
-      yields the full $+10.5$ Barren IoU over the Vanilla U-Net + CE
+      yields the full $+10.5$ pp Barren IoU over the Vanilla U-Net + CE
       baseline.
 \item \textbf{Deeper encoders do not automatically win.}
       DeepLabV3+-R101 uses $71\%$ more parameters than R50 yet
@@ -532,11 +536,13 @@ loss function. Our three central findings are:
       Pareto-optimal against R50.
 \end{enumerate}
 
-\textbf{Best configuration.} DeepLabV3+-R50 with Combined loss achieves
-a test mIoU of \textbf{0.7332} on full-resolution reconstructed 120-image
-test set, exceeding the proposal's $\ge 0.55$ success threshold by
-$+18$ absolute points and the weakest in-study baseline (Vanilla U-Net
-+ CE at 0.6402) by $+9.3$ points.
+\textbf{Best configuration tested.} DeepLabV3+-R50 with Combined loss
+achieves a test mIoU of \textbf{0.7332} on the full-resolution
+reconstructed 120-image test set, exceeding the proposal's $\ge 0.55$
+success threshold by $+18$ pp and the weakest in-study baseline
+(Vanilla U-Net + CE at 0.6402) by $+9.3$ pp. We note that the combination
+of Attention U-Net + Combined loss was not run and cannot be ruled out
+as a stronger configuration.
 
 \textbf{Limitations.} This study uses a single dataset (DeepGlobe); the
 transfer-learning findings may not generalize to tasks with larger

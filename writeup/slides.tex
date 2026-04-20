@@ -125,25 +125,35 @@
 \section{Method}
 
 \begin{frame}{Experimental grid}
+  \footnotesize
+  \begin{columns}[T]
+  \column{0.50\textwidth}
   \textbf{Phase 4} -- architecture, fixed loss (CE), 6 runs:
-  \small
   \begin{itemize}
-    \item Vanilla U-Net (scratch) \hspace{1em}\textit{Ronneberger-style baseline}
-    \item U-Net + ResNet34 (scratch) \hspace{1em}\textit{isolates arch effect}
-    \item U-Net + ResNet34 (ImageNet) \hspace{1em}\textit{isolates transfer}
+    \setlength{\itemsep}{0.15em}
+    \item Vanilla U-Net (scratch)
+    \item U-Net + ResNet34 (scratch)
+    \item U-Net + ResNet34 (ImageNet)
     \item DeepLabV3+ + ResNet50 (ImageNet)
     \item DeepLabV3+ + ResNet101 (ImageNet)
-    \item Attention U-Net + ResNet34 + SCSE (ImageNet)
+    \item Attention U-Net + R34 + SCSE (ImageNet)
   \end{itemize}
 
-  \vspace{0.4em}
-  \textbf{Phase 5} -- loss, fixed arch (Phase 4 winner = DeepLabV3+-R50), 4 runs:
+  \column{0.48\textwidth}
+  \textbf{Phase 5} -- loss, fixed architecture, 4 runs:
   \begin{itemize}
+    \setlength{\itemsep}{0.15em}
     \item Cross-Entropy (baseline)
     \item Dice
     \item Focal ($\alpha{=}0.25,\gamma{=}2$)
-    \item Combined ($0.5 \cdot \text{CE} + 0.5 \cdot \text{Dice}$)
+    \item Combined ($0.5\cdot\text{CE} + 0.5\cdot\text{Dice}$)
   \end{itemize}
+  \end{columns}
+
+  \vspace{0.7em}
+  \emph{Architecture choice for Phase 5:} DeepLabV3+-R50 --- best efficient
+  performer in Phase 4 (2.3$\times$ faster training than Attention U-Net,
+  within $0.006$ val mIoU).
 
   \vspace{0.4em}
   \textbf{Phase 6} -- all 9 checkpoints evaluated at full $2448^2$ resolution.
@@ -328,8 +338,9 @@
 
   \vspace{0.2em}
   \footnotesize
-  Shared failure mode: Rangeland $\leftrightarrow$ Forest/Agriculture
-  confusion---these classes have similar spectral \& textural signatures.
+  Shared failure mode: Rangeland misclassified as Agriculture (row
+  fraction $\sim 0.21$--$0.23$)---the two classes share overlapping
+  spectral and textural signatures in RGB imagery.
 \end{frame}
 
 \begin{frame}{Qualitative comparison}
@@ -346,7 +357,7 @@
 
   \vspace{0.2em}
   \footnotesize
-  Errors cluster at semantic boundaries: Rangeland $\to$ Forest,
+  Errors cluster at semantic boundaries: Rangeland $\to$ Agriculture,
   urban shadows $\to$ Water, bare agricultural margins $\to$ Barren.
 \end{frame}
 
