@@ -354,29 +354,29 @@
 \section{Conclusions}
 
 \begin{frame}{Summary of findings}
-  \small
+  \footnotesize
   \begin{enumerate}
-    \setlength{\itemsep}{0.3em}
-    \item \textbf{Pre-training is the dominant single-variable factor.}
-          ImageNet pre-training contributes $+4.1$ mIoU (architecture
-          fixed); any single decoder swap contributes $\le +1.0$ mIoU.
+    \setlength{\itemsep}{0.25em}
+    \item \textbf{Pre-training dominates.} $+4.1$ mIoU (architecture
+          fixed) vs.\ $\le +1.0$ for any single decoder swap.
           \textit{$\Rightarrow$ prioritize pre-training over architecture.}
-    \item \textbf{Loss rebalancing is complementary to architecture.}
+    \item \textbf{Loss rebalancing complements architecture.}
           Combined CE + Dice on DeepLabV3+-R50 adds $+3.7$ pp test mIoU
-          and $+2.0$ pp Barren IoU over CE; stacked with the architecture
-          upgrade, Barren-class gain reaches $+10.5$ pp.
+          and $+2.0$ pp Barren IoU; stacked with the architecture
+          upgrade, Barren reaches $+10.5$ pp.
           \textit{$\Rightarrow$ rebalance the loss for long-tailed classes.}
-    \item \textbf{A deeper encoder is not Pareto-dominant.}
-          R101 trails R50 on val ($-0.008$) and marginally exceeds it on
-          test ($+0.022$)---both within single-seed variance---at $71\%$
-          more parameters and $2.4\times$ training cost.
+    \item \textbf{Depth is not Pareto-dominant.} R101 vs.\ R50:
+          val $-0.008$, test $+0.022$ (within single-seed variance),
+          at $71\%$ more parameters and $2.4\times$ training cost.
           \textit{$\Rightarrow$ match capacity to training-set size.}
   \end{enumerate}
 
-  \vspace{0.4em}
+  \vspace{0.3em}
   \begin{block}{Best model}
-    \small DeepLabV3+-R50 + Combined loss: \textbf{0.7332 test mIoU}
-    on full-resolution reconstructions (120 test images, 7 classes).
+    \footnotesize
+    \textbf{DeepLabV3+-R50 + Combined (CE + Dice) loss} --- \textbf{0.7332
+    test mIoU} on full-resolution reconstructions (120 test images at
+    $2448 \times 2448$, 7 classes).
   \end{block}
 \end{frame}
 
