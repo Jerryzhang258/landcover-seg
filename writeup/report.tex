@@ -1,17 +1,17 @@
-\documentclass[11pt,letterpaper]{article}
-\usepackage[margin=1in]{geometry}
+\documentclass[conference,letterpaper,10pt]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb}
 \usepackage{graphicx}
 \usepackage{booktabs}
-\usepackage{amsmath,amssymb}
-\usepackage{hyperref}
 \usepackage{caption}
 \usepackage{subcaption}
 \usepackage{xcolor}
-\usepackage{multirow}
 \usepackage{array}
-\usepackage[numbers]{natbib}
-\usepackage{url}
 \usepackage{float}
+\usepackage{url}
+\usepackage{hyperref}
 
 \hypersetup{
   colorlinks=true,
@@ -20,17 +20,14 @@
   urlcolor=blue!60!black,
 }
 
-\setlength{\parskip}{0.4em}
-\setlength{\parindent}{0pt}
+\title{Deep Learning-Based Land Cover Segmentation\\from Satellite Imagery: An Empirical Study of\\Architectures, Transfer Learning, and Loss Functions}
 
-\title{\vspace{-2em}Deep Learning-Based Land Cover Segmentation from\\
-       Satellite Imagery: An Empirical Study of Architectures,\\
-       Transfer Learning, and Loss Functions}
-\author{Rongxuan Zhang\\
-        \small Northeastern University\\
-        \small \texttt{zhang.rongxu@northeastern.edu}\\
-        \small EECE 7370 Advanced Computer Vision}
-\date{April 18, 2026}
+\author{\IEEEauthorblockN{Rongxuan Zhang}
+\IEEEauthorblockA{\textit{Department of Electrical and Computer Engineering} \\
+\textit{Northeastern University}\\
+Boston, MA, USA \\
+EECE 7370 Advanced Computer Vision \\
+zhang.rongxu@northeastern.edu}}
 
 \begin{document}
 \maketitle
@@ -56,12 +53,17 @@ the Vanilla U-Net baseline by $+9.3$ pp. Code and trained weights:
 \url{https://github.com/Jerryzhang258/landcover-seg}.
 \end{abstract}
 
+\begin{IEEEkeywords}
+Semantic segmentation, satellite imagery, DeepGlobe, U-Net, DeepLabV3+,
+transfer learning, loss function, class imbalance.
+\end{IEEEkeywords}
+
 \section{Introduction}\label{sec:intro}
 
 Land-cover segmentation from high-resolution satellite imagery is a
 pixel-level classification problem whose outputs feed into urban planning,
 precision agriculture, ecological monitoring, and climate research. The
-DeepGlobe Land Cover Classification challenge~\citep{demir2018deepglobe}
+DeepGlobe Land Cover Classification challenge~\cite{demir2018deepglobe}
 provides 803 manually-annotated 2448$\times$2448 RGB tiles over seven
 classes---Urban, Agriculture, Rangeland, Forest, Water, Barren, and
 Unknown---with a marked long-tailed class distribution in which Water and
@@ -116,42 +118,42 @@ several points.
 \section{Related Work}\label{sec:related}
 
 \textbf{Encoder--decoder segmentation.}  The U-Net architecture of
-Ronneberger~et~al.~\citep{ronneberger2015unet} introduced the symmetric
+Ronneberger~et~al.~\cite{ronneberger2015unet} introduced the symmetric
 contracting--expanding path with skip connections that remains the de-facto
 baseline for semantic segmentation on small-to-medium datasets. DeepLabV3+
-\citep{chen2018deeplabv3plus} replaces the contracting path with atrous spatial
+\cite{chen2018deeplabv3plus} replaces the contracting path with atrous spatial
 pyramid pooling (ASPP) to capture multi-scale context in a single forward
 pass, and adds a lightweight decoder for boundary refinement. Attention
 mechanisms for U-Net variants---including spatial-and-channel
-squeeze-and-excitation (SCSE)~\citep{roy2018scse}---reweight intermediate
+squeeze-and-excitation (SCSE)~\cite{roy2018scse}---reweight intermediate
 features to emphasize informative regions and have become popular in
 medical and remote-sensing imaging.
 
 \textbf{Transfer learning from ImageNet.}  Using pre-trained ImageNet
-backbones as encoders is standard practice since~\citep{he2016resnet}, yet
+backbones as encoders is standard practice since~\cite{he2016resnet}, yet
 its benefit is known to vary by domain: datasets whose low-level statistics
 (natural images vs.~satellite) differ from ImageNet may see smaller gains
-\citep{huh2016makes}. The revised proposal for this project explicitly
+\cite{huh2016makes}. The revised proposal for this project explicitly
 listed the magnitude of this gain as a hypothesis to be verified.
 
 \textbf{Loss functions for imbalanced segmentation.}  Dice
-loss~\citep{milletari2016vnet} directly optimizes the S\o{}rensen--Dice
+loss~\cite{milletari2016vnet} directly optimizes the S\o{}rensen--Dice
 coefficient and implicitly rebalances class contributions through its
 ratio-based form, but can produce noisy gradients on classes with very few
-pixels. Focal loss~\citep{lin2017focal} down-weights easy (well-classified)
+pixels. Focal loss~\cite{lin2017focal} down-weights easy (well-classified)
 examples by a factor $(1-p_t)^\gamma$ with $\gamma=2$, emphasizing hard
 minority pixels. Combined losses (e.g., $\alpha\cdot\text{CE}+(1-\alpha)\cdot\text{Dice}$)
 are commonly used in medical and remote-sensing segmentation to preserve the
 stable CE optimization path while retaining the rebalancing effect of
-Dice~\citep{jadon2020survey}.
+Dice~\cite{jadon2020survey}.
 
 \textbf{Tiling for high-resolution imagery.}  DeepGlobe challenge
-winners~\citep{kuo2018deepglobewinner} and medical imaging pipelines such
-as~\citep{roerdink2001watershed,huang2021transunet} routinely use overlapping
+winners~\cite{kuo2018deepglobewinner} and medical imaging pipelines such
+as~\cite{roerdink2001watershed,huang2021transunet} routinely use overlapping
 tile inference with prediction averaging at boundaries, a technique that
 we apply here.
 
-\textbf{The segmentation\_models.pytorch library}~\citep{iakubovskii2019smp}
+\textbf{The segmentation\_models.pytorch library}~\cite{iakubovskii2019smp}
 supplies unified implementations of U-Net, DeepLabV3+, and many
 encoder--decoder combinations with a consistent API, which we use as the
 backbone of our model factory.
@@ -162,7 +164,7 @@ backbone of our model factory.
 
 We use the DeepGlobe Land Cover training set: 803 RGB images of size
 $2448\times2448$ with paired pixel-wise RGB masks that encode seven classes.
-The official color map~\citep{demir2018deepglobe} is decoded into a
+The official color map~\cite{demir2018deepglobe} is decoded into a
 $\{0,\dots,6\}$ label grid. The \emph{Unknown} class (index 6, black
 pixels)---which accounts for 5--10\% of pixels and represents annotator
 uncertainty---is treated as \texttt{ignore\_index} and excluded from both
@@ -265,7 +267,7 @@ tiling implementation is covered by a \texttt{pytest} round-trip test
 asserting \texttt{stitch(tile(x)) == x} on random 2448$^2$ arrays for both
 3$\times$3 and 4$\times$4 grids.
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \begin{subfigure}[t]{0.52\linewidth}
   \includegraphics[width=\linewidth]{figs/class_dist.png}
@@ -280,7 +282,7 @@ asserting \texttt{stitch(tile(x)) == x} on random 2448$^2$ arrays for both
 \caption{Dataset overview. The color map in the right panel follows the
 official DeepGlobe key: cyan=Urban, yellow=Agriculture, magenta=Rangeland,
 green=Forest, blue=Water, white=Barren, black=Unknown.}
-\end{figure}
+\end{figure*}
 
 \section{Results and Discussion}\label{sec:results}
 
@@ -293,14 +295,14 @@ from-scratch baselines (green/orange, corresponding to Vanilla U-Net and
 ResNet34-scratch) take 12--20 epochs to reach the same level. This
 convergence gap is the clearest qualitative signature of transfer learning.
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=0.9\linewidth]{figs/curves_archs.png}
 \caption{Training loss (top row) and validation mIoU (bottom row) across
 the six Phase 4 architectures. All share learning rate, epoch budget, and
 augmentation; only the architecture varies.}
 \label{fig:curves-arch}
-\end{figure}
+\end{figure*}
 
 \subsection{Architecture comparison (Phase 4)}
 
@@ -308,7 +310,7 @@ Table~\ref{tab:arch} reports the final validation mIoU along with parameter
 count, training time, peak GPU memory, and single-image inference latency
 at full resolution. The columns are sorted by test mIoU descending.
 
-\begin{table}[H]
+\begin{table*}[!t]
 \centering\small
 \caption{\textbf{Phase 4: architecture comparison.} All use cross-entropy.
 ``Test mIoU'' is computed on reconstructed $2448^2$ predictions over 120
@@ -328,7 +330,7 @@ DeepLabV3+ ResNet101 (pre-trained)& 45.67 & 2.32 & 5559 &  891 & 0.7124 & 0.7178
 Attention U-Net R34 (pre-trained)& 24.55 & 2.20 & 6968 &  855 & \textbf{0.7259} & \textbf{0.7316} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
 The key numeric findings:
 
@@ -371,7 +373,7 @@ The key numeric findings:
 Figure~\ref{fig:arch-bars} visualizes the final metric bars and
 per-class IoU heatmap for all six architectures.
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \begin{subfigure}[t]{0.49\linewidth}
   \includegraphics[width=\linewidth]{figs/archs_metrics.png}
@@ -387,14 +389,14 @@ the hardest class across the board; inspection of the confusion matrices
 (Fig.~\ref{fig:cm}) shows it is most commonly confused with Agriculture
 rather than Forest.}
 \label{fig:arch-bars}
-\end{figure}
+\end{figure*}
 
 \subsection{Loss comparison (Phase 5)}
 
 Phase 5 fixes the architecture at DeepLabV3+-R50 and sweeps four losses.
 Table~\ref{tab:loss} and Figure~\ref{fig:loss-curves} report the results.
 
-\begin{table}[H]
+\begin{table*}[!t]
 \centering\footnotesize
 \caption{\textbf{Phase 5: loss comparison on DeepLabV3+-R50.} All runs
 share hyperparameters and training duration. The Combined loss is
@@ -412,9 +414,9 @@ Focal ($\alpha{=}0.25,\gamma{=}2$) & 0.7286 & 0.7217 & 0.667 & 0.789 & 0.451 \\
 \textbf{Combined (0.5 CE + 0.5 Dice)} & \textbf{0.7382} & \textbf{0.7332} & \textbf{0.676} & \textbf{0.810} & \textbf{0.454} \\
 \bottomrule
 \end{tabular}
-\end{table}
+\end{table*}
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \begin{subfigure}[t]{0.58\linewidth}
   \includegraphics[width=\linewidth]{figs/curves_losses.png}
@@ -426,7 +428,7 @@ Focal ($\alpha{=}0.25,\gamma{=}2$) & 0.7286 & 0.7217 & 0.667 & 0.789 & 0.451 \\
 \end{subfigure}
 \caption{Phase 5: loss-function comparison on DeepLabV3+-R50.}
 \label{fig:loss-curves}
-\end{figure}
+\end{figure*}
 
 The most consequential finding is minority-class recovery: using the
 Combined loss, the test Barren IoU rises from the CE baseline's 0.656
@@ -447,7 +449,7 @@ $\sim 0.21$--$0.23$), with a smaller fraction confused with Forest
 between low-density rangeland and managed farmland in RGB satellite
 imagery.
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \begin{subfigure}[t]{0.49\linewidth}
   \includegraphics[width=\linewidth]{figs/cm_attn_unet_ce.png}
@@ -459,7 +461,7 @@ imagery.
 \end{subfigure}
 \caption{Row-normalized confusion matrices (diagonal = per-class recall).}
 \label{fig:cm}
-\end{figure}
+\end{figure*}
 
 \subsection{Qualitative and failure-case analysis}
 
@@ -476,22 +478,22 @@ homogeneous regions, which matches the intuition that the 816-pixel
 tile receptive field is large enough for texture but sometimes too small
 for global land-use disambiguation.
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\linewidth]{figs/qualitative.png}
 \caption{Qualitative comparison on three test scenes: image, ground
 truth, and predictions from three pipelines.}
 \label{fig:qual}
-\end{figure}
+\end{figure*}
 
-\begin{figure}[H]
+\begin{figure*}[!t]
 \centering
 \includegraphics[width=\linewidth]{figs/failures_combined.png}
 \caption{Five worst-performing test images for
 DeepLabV3+-R50~+~Combined, ranked by test mIoU ascending. Misclassifications
 cluster at semantic boundaries.}
 \label{fig:failures}
-\end{figure}
+\end{figure*}
 
 \subsection{Efficiency vs.~accuracy}
 
@@ -559,83 +561,73 @@ and per-epoch training logs are available at
 sweep is reproducible in $\sim$15 GPU-hours on an A100 through the
 notebook \texttt{notebooks/colab\_run.ipynb}.
 
-\bibliographystyle{plainnat}
-\begin{thebibliography}{20}
+\begin{thebibliography}{00}
 
-\bibitem[Demir et al.(2018)]{demir2018deepglobe}
-Ilke Demir, Krzysztof Koperski, David Lindenbaum, Guan Pang, Jing Huang,
-Saikat Basu, Forest Hughes, Devis Tuia, and Ramesh Raskar.
-\newblock DeepGlobe 2018: A challenge to parse the earth through satellite
-  images.
-\newblock In \emph{Proceedings of the IEEE CVPR Workshops}, 2018.
+\bibitem{demir2018deepglobe}
+I.~Demir, K.~Koperski, D.~Lindenbaum, G.~Pang, J.~Huang, S.~Basu, F.~Hughes,
+D.~Tuia, and R.~Raskar, ``DeepGlobe 2018: A challenge to parse the Earth
+through satellite images,'' in \emph{Proc. IEEE Conf. Comput. Vis. Pattern
+Recognit. Workshops (CVPRW)}, Jun. 2018, pp. 172--181.
 
-\bibitem[Ronneberger et al.(2015)]{ronneberger2015unet}
-Olaf Ronneberger, Philipp Fischer, and Thomas Brox.
-\newblock U-Net: Convolutional networks for biomedical image segmentation.
-\newblock In \emph{MICCAI}, 2015.
+\bibitem{ronneberger2015unet}
+O.~Ronneberger, P.~Fischer, and T.~Brox, ``U-Net: Convolutional networks
+for biomedical image segmentation,'' in \emph{Proc. Int. Conf. Med. Image
+Comput. Comput.-Assisted Intervention (MICCAI)}, 2015, pp. 234--241.
 
-\bibitem[Chen et al.(2018)]{chen2018deeplabv3plus}
-Liang-Chieh Chen, Yukun Zhu, George Papandreou, Florian Schroff, and Hartwig
-  Adam.
-\newblock Encoder-decoder with atrous separable convolution for semantic
-  image segmentation.
-\newblock In \emph{ECCV}, 2018.
+\bibitem{chen2018deeplabv3plus}
+L.-C.~Chen, Y.~Zhu, G.~Papandreou, F.~Schroff, and H.~Adam, ``Encoder-decoder
+with atrous separable convolution for semantic image segmentation,''
+in \emph{Proc. Eur. Conf. Comput. Vis. (ECCV)}, 2018, pp. 801--818.
 
-\bibitem[Roy et al.(2018)]{roy2018scse}
-Abhijit Guha Roy, Nassir Navab, and Christian Wachinger.
-\newblock Concurrent spatial and channel squeeze-and-excitation in fully
-  convolutional networks.
-\newblock In \emph{MICCAI}, 2018.
+\bibitem{roy2018scse}
+A.~G.~Roy, N.~Navab, and C.~Wachinger, ``Concurrent spatial and channel
+squeeze-and-excitation in fully convolutional networks,'' in \emph{Proc.
+Int. Conf. Med. Image Comput. Comput.-Assisted Intervention (MICCAI)},
+2018, pp. 421--429.
 
-\bibitem[He et al.(2016)]{he2016resnet}
-Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
-\newblock Deep residual learning for image recognition.
-\newblock In \emph{CVPR}, 2016.
+\bibitem{he2016resnet}
+K.~He, X.~Zhang, S.~Ren, and J.~Sun, ``Deep residual learning for image
+recognition,'' in \emph{Proc. IEEE Conf. Comput. Vis. Pattern Recognit.
+(CVPR)}, Jun. 2016, pp. 770--778.
 
-\bibitem[Huh et al.(2016)]{huh2016makes}
-Minyoung Huh, Pulkit Agrawal, and Alexei A. Efros.
-\newblock What makes ImageNet good for transfer learning?
-\newblock \emph{arXiv preprint arXiv:1608.08614}, 2016.
+\bibitem{huh2016makes}
+M.~Huh, P.~Agrawal, and A.~A.~Efros, ``What makes ImageNet good for
+transfer learning?'' \emph{arXiv preprint}, arXiv:1608.08614, 2016.
 
-\bibitem[Milletari et al.(2016)]{milletari2016vnet}
-Fausto Milletari, Nassir Navab, and Seyed-Ahmad Ahmadi.
-\newblock V-Net: Fully convolutional neural networks for volumetric medical
-  image segmentation.
-\newblock In \emph{3DV}, 2016.
+\bibitem{milletari2016vnet}
+F.~Milletari, N.~Navab, and S.-A.~Ahmadi, ``V-Net: Fully convolutional
+neural networks for volumetric medical image segmentation,'' in
+\emph{Proc. Int. Conf. 3D Vis. (3DV)}, 2016, pp. 565--571.
 
-\bibitem[Lin et al.(2017)]{lin2017focal}
-Tsung-Yi Lin, Priya Goyal, Ross Girshick, Kaiming He, and Piotr Dollar.
-\newblock Focal loss for dense object detection.
-\newblock In \emph{ICCV}, 2017.
+\bibitem{lin2017focal}
+T.-Y.~Lin, P.~Goyal, R.~Girshick, K.~He, and P.~Doll\'ar, ``Focal loss
+for dense object detection,'' in \emph{Proc. IEEE Int. Conf. Comput. Vis.
+(ICCV)}, Oct. 2017, pp. 2980--2988.
 
-\bibitem[Jadon(2020)]{jadon2020survey}
-Shruti Jadon.
-\newblock A survey of loss functions for semantic segmentation.
-\newblock In \emph{IEEE CIBCB}, 2020.
+\bibitem{jadon2020survey}
+S.~Jadon, ``A survey of loss functions for semantic segmentation,''
+in \emph{Proc. IEEE Conf. Comput. Intell. Bioinform. Comput. Biol.
+(CIBCB)}, 2020, pp. 1--7.
 
-\bibitem[Kuo et al.(2018)]{kuo2018deepglobewinner}
-Tzu-Sheng Kuo, Keng-Sen Tseng, Jia-Wei Yan, Yen-Cheng Liu, and Yu-Chiang Frank
-  Wang.
-\newblock Deep aggregation net for land cover classification.
-\newblock In \emph{CVPR Workshops}, 2018.
+\bibitem{kuo2018deepglobewinner}
+T.-S.~Kuo, K.-S.~Tseng, J.-W.~Yan, Y.-C.~Liu, and Y.-C.~F.~Wang,
+``Deep aggregation net for land cover classification,'' in
+\emph{Proc. IEEE Conf. Comput. Vis. Pattern Recognit. Workshops (CVPRW)},
+Jun. 2018, pp. 252--256.
 
-\bibitem[Roerdink and Meijster(2000)]{roerdink2001watershed}
-Jos B. T. M. Roerdink and Arnold Meijster.
-\newblock The watershed transform: Definitions, algorithms and
-  parallelization strategies.
-\newblock \emph{Fundamenta Informaticae}, 41(1-2):187--228, 2000.
+\bibitem{roerdink2001watershed}
+J.~B.~T.~M.~Roerdink and A.~Meijster, ``The watershed transform:
+Definitions, algorithms and parallelization strategies,''
+\emph{Fundamenta Informaticae}, vol.~41, no. 1--2, pp. 187--228, 2000.
 
-\bibitem[Chen et al.(2021)]{huang2021transunet}
-Jieneng Chen, Yongyi Lu, Qihang Yu, Xiangde Luo, Ehsan Adeli, Yan Wang,
-  Le Lu, Alan Yuille, and Yuyin Zhou.
-\newblock TransUNet: Transformers make strong encoders for medical image
-  segmentation.
-\newblock \emph{arXiv preprint arXiv:2102.04306}, 2021.
+\bibitem{huang2021transunet}
+J.~Chen, Y.~Lu, Q.~Yu, X.~Luo, E.~Adeli, Y.~Wang, L.~Lu, A.~Yuille, and
+Y.~Zhou, ``TransUNet: Transformers make strong encoders for medical image
+segmentation,'' \emph{arXiv preprint}, arXiv:2102.04306, 2021.
 
-\bibitem[Iakubovskii(2019)]{iakubovskii2019smp}
-Pavel Iakubovskii.
-\newblock Segmentation Models PyTorch.
-\newblock \url{https://github.com/qubvel/segmentation_models.pytorch}, 2019.
+\bibitem{iakubovskii2019smp}
+P.~Iakubovskii, ``Segmentation Models PyTorch,'' GitHub repository, 2019.
+[Online]. Available: \url{https://github.com/qubvel/segmentation_models.pytorch}
 
 \end{thebibliography}
 
