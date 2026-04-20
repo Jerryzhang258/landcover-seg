@@ -31,7 +31,7 @@
 
 \begin{frame}{Why land-cover segmentation?}
   \begin{columns}[T]
-  \column{0.55\textwidth}
+  \column{0.58\textwidth}
   \textbf{Applications}
   \begin{itemize}
     \item Urban planning (city growth, land use)
@@ -45,8 +45,9 @@
   per-pixel class from \{Urban, Agriculture, Rangeland, Forest, Water,
   Barren, Unknown\}.
 
-  \column{0.43\textwidth}
-  \includegraphics[width=\linewidth]{figs/samples.png}
+  \column{0.40\textwidth}
+  \centering
+  \includegraphics[height=0.78\textheight,keepaspectratio]{figs/samples.png}
   \end{columns}
 \end{frame}
 
@@ -73,6 +74,7 @@
 
 \begin{frame}{DeepGlobe Land Cover Classification}
   \begin{itemize}
+    \setlength{\itemsep}{0.15em}
     \item \textbf{803} manually-annotated $2448^2$ RGB images, 7 classes
     \item Split \textbf{at the image level} (no tile leakage):
           562 train / 121 val / 120 test
@@ -80,9 +82,9 @@
           with the official DeepGlobe protocol
   \end{itemize}
 
-  \vspace{0.6em}
+  \vspace{0.3em}
   \begin{center}
-  \includegraphics[width=0.85\linewidth]{figs/class_dist.png}
+  \includegraphics[height=0.50\textheight,keepaspectratio]{figs/class_dist.png}
   \end{center}
 \end{frame}
 
@@ -183,9 +185,9 @@
 
 \begin{frame}{Training dynamics (Phase 4)}
   \centering
-  \includegraphics[width=0.95\linewidth]{figs/curves_archs.png}
+  \includegraphics[height=0.78\textheight,keepaspectratio]{figs/curves_archs.png}
 
-  \vspace{0.5em}
+  \vspace{0.3em}
   \small
   Pre-trained runs cross 0.6 mIoU in $\le$3 epochs; scratch runs need 12--20.
 \end{frame}
@@ -313,18 +315,18 @@
 \end{frame}
 
 \begin{frame}{Confusion matrices}
-  \begin{columns}
+  \begin{columns}[T]
   \column{0.49\textwidth}
   \centering
   \scriptsize Attention U-Net + CE\\
-  \includegraphics[width=\linewidth]{figs/cm_attn_unet_ce.png}
+  \includegraphics[height=0.72\textheight,keepaspectratio]{figs/cm_attn_unet_ce.png}
   \column{0.49\textwidth}
   \centering
   \scriptsize DeepLabV3+-R50 + Combined (winner)\\
-  \includegraphics[width=\linewidth]{figs/cm_deeplab_r50_combined.png}
+  \includegraphics[height=0.72\textheight,keepaspectratio]{figs/cm_deeplab_r50_combined.png}
   \end{columns}
 
-  \vspace{0.4em}
+  \vspace{0.2em}
   \footnotesize
   Shared failure mode: Rangeland $\leftrightarrow$ Forest/Agriculture
   confusion---these classes have similar spectral \& textural signatures.
@@ -332,7 +334,7 @@
 
 \begin{frame}{Qualitative comparison}
   \centering
-  \includegraphics[width=0.95\linewidth]{figs/qualitative.png}
+  \includegraphics[height=0.80\textheight,keepaspectratio]{figs/qualitative.png}
 
   \vspace{0.2em}
   \scriptsize image \hspace{3em} ground truth \hspace{2em} per-model predictions
@@ -340,9 +342,9 @@
 
 \begin{frame}{Failure cases (DeepLabV3+-R50 + Combined)}
   \centering
-  \includegraphics[width=0.9\linewidth]{figs/failures_combined.png}
+  \includegraphics[height=0.78\textheight,keepaspectratio]{figs/failures_combined.png}
 
-  \vspace{0.4em}
+  \vspace{0.2em}
   \footnotesize
   Errors cluster at semantic boundaries: Rangeland $\to$ Forest,
   urban shadows $\to$ Water, bare agricultural margins $\to$ Barren.
