@@ -1,0 +1,3 @@
+# Demo-only dependencies. The base project (torch, smp, albumentations, cv2,
+# numpy) is assumed installed via the top-level requirements.txt.
+gradio==4.29.0
